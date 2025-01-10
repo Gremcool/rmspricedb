@@ -15,38 +15,24 @@ def cache_uploaded_file(file, file_name):
     if file_name not in st.session_state.uploaded_files:
         st.session_state.uploaded_files[file_name] = pd.read_excel(file)
 
-# Function to highlight matches in the DataFrame
+# Function to style DataFrame and highlight matches
 def highlight_matches(data, query):
-    """Highlight cells containing the search query in yellow and return HTML with scroll functionality."""
-    
-    # Create a style for highlighting
-    highlighted_html = data.to_html(classes="table table-bordered", escape=False)
-    
-    # Highlight the matching cells in yellow and add an ID for scroll
-    highlighted_html = highlighted_html.replace(
-        "<td>", "<td style='background-color: white;'>"
-    )  # Default background to white
-    highlighted_html = highlighted_html.replace(
-        f">{query.lower()}<", f" style='background-color: yellow;'>{query.lower()}<"
-    )  # Highlight matching text in yellow
-    
-    # Add JavaScript to scroll to the first yellow-highlighted cell
-    highlighted_html = f"""
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {{
-            const firstYellowCell = document.querySelector('td[style*="background-color: yellow"]');
-            if (firstYellowCell) {{
-                firstYellowCell.scrollIntoView({{
-                    behavior: 'smooth',
-                    block: 'center'
-                }});
-            }}
-        }});
-        </script>
-        {highlighted_html}
-    """
-    
-    return highlighted_html
+    """Highlight cells containing the search query in yellow."""
+    return data.style.applymap(
+        lambda val: "background-color: yellow" if query.lower() in str(val).lower() else ""
+    ).set_table_styles(
+        [
+            {
+                "selector": "thead th",
+                "props": [
+                    ("background-color", "black"),
+                    ("color", "white"),
+                    ("font-weight", "bold"),
+                    ("text-align", "center"),
+                ],
+            }
+        ]
+    )
 
 # Function to search across files and highlight results
 def search_across_files(query, files):
@@ -58,7 +44,7 @@ def search_across_files(query, files):
             result[file_name] = highlight_matches(matches, query)
     return result
 
-# Function for the Admin page
+# Define the admin page
 def admin_page():
     st.title("Admin Page")
     st.sidebar.header("Admin Controls")
@@ -76,7 +62,7 @@ def admin_page():
             file_name = file.name.split(".")[0]  # Use file name as header
             cache_uploaded_file(file, file_name)
 
-# Function for the Main page
+# Define the main page
 def main_page():
     # Apply custom styling for a polished design
     st.markdown(
@@ -126,7 +112,7 @@ def main_page():
             for file_name, styled_data in search_results.items():
                 title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 st.markdown(f"<div class='header' style='background-color: {title_bg_color};'>{file_name}</div>", unsafe_allow_html=True)
-                st.markdown(styled_data, unsafe_allow_html=True)
+                st.write(styled_data)
         else:
             st.write("No matches found across the uploaded files.")
     else:
