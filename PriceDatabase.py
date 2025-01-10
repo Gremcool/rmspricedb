@@ -8,9 +8,9 @@ if "uploaded_files" not in st.session_state:
 if "search_query" not in st.session_state:
     st.session_state.search_query = ""
 
-# Add profiling utility
+# Profiling utility for performance optimization
 def profile(func):
-    """Decorator for profiling function execution time."""
+    """Decorator to measure function execution time."""
     def wrapper(*args, **kwargs):
         start_time = time()
         result = func(*args, **kwargs)
@@ -25,15 +25,15 @@ def cache_uploaded_file(file, file_name):
     if file_name not in st.session_state.uploaded_files:
         st.session_state.uploaded_files[file_name] = pd.read_excel(file)
 
-# Function to style the DataFrame with fixed column width
+# Function to style DataFrame with fixed column width
 @profile
 def style_headers_fixed_width(df, cell_width=100):
     """
     Apply styles to the DataFrame with a fixed cell width.
-
+    
     Parameters:
     - df: The input DataFrame.
-    - cell_width: The desired fixed width for columns, in pixels.
+    - cell_width: Fixed width for columns (in pixels).
     """
     return df.style.set_table_styles(
         [
@@ -45,17 +45,12 @@ def style_headers_fixed_width(df, cell_width=100):
                 ("font-size", "12px"),
                 ("padding", "2px 5px"),
                 ("height", "15px"),
-                ("white-space", "nowrap"),
                 (f"width", f"{cell_width}px"),
                 (f"max-width", f"{cell_width}px"),
-                ("overflow", "hidden"),
-                ("text-overflow", "ellipsis"),
             ]},
             {"selector": "td", "props": [
                 ("text-align", "left"),
                 ("padding", "2px 5px"),
-                ("height", "15px"),
-                ("white-space", "nowrap"),
                 (f"width", f"{cell_width}px"),
                 (f"max-width", f"{cell_width}px"),
                 ("overflow", "hidden"),
@@ -64,16 +59,21 @@ def style_headers_fixed_width(df, cell_width=100):
         ]
     )
 
-# Optimize search and filtering
+# Search and highlight matches
 @profile
 def search_and_highlight(data, query):
     """Filter the data and highlight rows containing the search query."""
     if data is not None and query:
         filtered_data = data[data.apply(lambda row: row.astype(str).str.contains(query, case=False).any(), axis=1)]
-        return filtered_data if not filtered_data.empty else None
+        if not filtered_data.empty:
+            # Highlight cells matching the query
+            def highlight(value):
+                return f"background-color: yellow" if query.lower() in str(value).lower() else ""
+            
+            return filtered_data.style.applymap(highlight)
     return None
 
-# Define the admin page
+# Admin Page: Upload files
 def admin_page():
     st.title("Admin Page")
     st.sidebar.header("Admin Controls")
@@ -91,32 +91,10 @@ def admin_page():
             file_name = file.name.split(".")[0]  # Use file name as header
             cache_uploaded_file(file, file_name)
 
-# Define the main page
+# Main Page: Search and display results
 def main_page():
-    # Apply custom styling for a polished design
-    st.markdown(
-        """
-        <style>
-        body {
-            background-color: #eaf4fc;
-            color: #333;
-            font-family: 'Helvetica Neue', sans-serif;
-        }
-        .header {
-            background-color: #2e86c1;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Page title
-    st.markdown("<div class='page-title'>Search Price Lists</div>", unsafe_allow_html=True)
+    st.title("Search Price Lists")
+    st.sidebar.header("Search Controls")
 
     # Predictive search bar
     search_query = st.text_input("Search Price Lists", st.session_state.search_query, key="search")
@@ -128,24 +106,25 @@ def main_page():
 
     # Display search results
     if st.session_state.search_query:
-        st.markdown("<div class='header'>Search Results</div>", unsafe_allow_html=True)
+        st.subheader("Search Results")
         for file_name, data in st.session_state.uploaded_files.items():
-            st.markdown(f"<div class='header'>{file_name}</div>", unsafe_allow_html=True)
+            st.markdown(f"### {file_name}")
             result = search_and_highlight(data, st.session_state.search_query)
             if result is not None:
-                st.dataframe(result, use_container_width=True)
+                st.write(result.to_html(), unsafe_allow_html=True)
             else:
                 st.write(f"No matches found in {file_name}.")
 
-    # Display uploaded files as sections
+    # Display uploaded files with fixed column width
     if st.session_state.uploaded_files:
+        st.subheader("Uploaded Files")
         for file_name, data in st.session_state.uploaded_files.items():
-            st.markdown(f"<div class='header'>{file_name}</div>", unsafe_allow_html=True)
+            st.markdown(f"### {file_name}")
             column_width = st.slider(f"Set column width for {file_name}", 50, 200, 100)
             styled_df = style_headers_fixed_width(data, column_width)
             st.write(styled_df.to_html(), unsafe_allow_html=True)
 
-# Navigation menu with Main Page as default
+# Navigation menu
 page = st.sidebar.selectbox("Choose a page", ["Main", "Admin"], index=0)
 if page == "Admin":
     admin_page()
