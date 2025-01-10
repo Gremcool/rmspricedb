@@ -2,7 +2,20 @@ import streamlit as st
 import pandas as pd
 import random
 
-# Function to style DataFrame and highlight matches
+# Set up session state to store uploaded files and search query
+if "uploaded_files" not in st.session_state:
+    st.session_state.uploaded_files = {}
+if "uploaded_logo" not in st.session_state:
+    st.session_state.uploaded_logo = None
+if "search_query" not in st.session_state:
+    st.session_state.search_query = ""
+
+# Function to cache the uploaded files
+def cache_uploaded_file(file, file_name):
+    if file_name not in st.session_state.uploaded_files:
+        st.session_state.uploaded_files[file_name] = pd.read_excel(file)
+
+# Function to highlight matches in the DataFrame
 def highlight_matches(data, query):
     """Highlight cells containing the search query in yellow and return HTML with scroll functionality."""
     
@@ -45,7 +58,25 @@ def search_across_files(query, files):
             result[file_name] = highlight_matches(matches, query)
     return result
 
-# Define the main page
+# Function for the Admin page
+def admin_page():
+    st.title("Admin Page")
+    st.sidebar.header("Admin Controls")
+
+    # Upload RMS logo
+    logo = st.sidebar.file_uploader("Upload RMS Logo", type=["png", "jpg", "jpeg"], key="logo")
+    if logo is not None:
+        st.session_state.uploaded_logo = logo
+
+    # Upload multiple Excel files
+    st.header("Upload Excel Files")
+    uploaded_files = st.file_uploader("Upload Excel files", type=["xlsx"], accept_multiple_files=True, key="excel")
+    if uploaded_files:
+        for file in uploaded_files:
+            file_name = file.name.split(".")[0]  # Use file name as header
+            cache_uploaded_file(file, file_name)
+
+# Function for the Main page
 def main_page():
     # Apply custom styling for a polished design
     st.markdown(
@@ -104,3 +135,10 @@ def main_page():
                 title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 st.markdown(f"<div class='header' style='background-color: {title_bg_color};'>{file_name}</div>", unsafe_allow_html=True)
                 st.write(data.head())  # Show preview of the uploaded files
+
+# Navigation menu with Main Page as default
+page = st.sidebar.selectbox("Choose a page", ["Main", "Admin"], index=0)
+if page == "Admin":
+    admin_page()
+else:
+    main_page()
