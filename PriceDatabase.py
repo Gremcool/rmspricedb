@@ -2,57 +2,57 @@ import streamlit as st
 import pandas as pd
 import random
 
-# Set up session state to store uploaded files and search query
-if "uploaded_files" not in st.session_state:
-    st.session_state.uploaded_files = {}
-if "uploaded_logo" not in st.session_state:
-    st.session_state.uploaded_logo = None
-if "search_query" not in st.session_state:
-    st.session_state.search_query = ""
-
-# Function to cache the uploaded files
-def cache_uploaded_file(file, file_name):
-    if file_name not in st.session_state.uploaded_files:
-        st.session_state.uploaded_files[file_name] = pd.read_excel(file)
-
 # Function to style DataFrame and highlight matches
 def highlight_matches(data, query):
-    """Highlight cells containing the search query in yellow."""
-    return data.style.applymap(
+    """Highlight cells containing the search query in yellow and return the column indices."""
+    column_indices = set()
+    
+    # Apply highlights and collect matching column indices
+    styled_data = data.style.applymap(
         lambda val: "background-color: yellow" if query.lower() in str(val).lower() else ""
-    ).set_table_styles(
-        [
-            {
-                "selector": "thead th",
-                "props": [
-                    ("background-color", "black"),
-                    ("color", "white"),
-                    ("font-weight", "bold"),
-                    ("text-align", "center"),
-                ],
-            }
-        ]
     )
+    for col in data.columns:
+        if data[col].astype(str).str.contains(query, case=False, na=False).any():
+            column_indices.add(data.columns.get_loc(col))
+    return styled_data, sorted(column_indices)
 
-# Function to search across files and highlight results
+# Function to search across files and return highlighted results
 def search_across_files(query, files):
-    """Search for the query in all uploaded files and return highlighted results."""
-    result = {}
+    """Search for the query in all uploaded files and return highlighted results with column indices."""
+    results = {}
     for file_name, data in files.items():
         matches = data[data.apply(lambda row: row.astype(str).str.contains(query, case=False, na=False).any(), axis=1)]
         if not matches.empty:
-            result[file_name] = highlight_matches(matches, query)
-    return result
+            styled_data, matching_columns = highlight_matches(matches, query)
+            results[file_name] = (styled_data, matching_columns)
+    return results
 
-# Define the admin page
-def admin_page():
-    st.title("Admin Page")
-    st.sidebar.header("Admin Controls")
+# Display search results with automatic scrolling
+def display_search_results(search_results):
+    """Display search results and automatically scroll to the first highlighted column."""
+    for file_name, (styled_data, matching_columns) in search_results.items():
+        # Random background color for the section header
+        title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        
+        st.markdown(f"<div class='header' style='background-color: {title_bg_color};'>{file_name}</div>", unsafe_allow_html=True)
+        st.write(styled_data)
 
-    # Upload RMS logo
-    logo = st.sidebar.file_uploader("Upload RMS Logo", type=["png", "jpg", "jpeg"], key="logo")
-    if logo is not None:
-        st.session_state.uploaded_logo = logo
+        # Embed JavaScript for scrolling
+        if matching_columns:
+            first_col = matching_columns[0]  # Scroll to the first matching column
+            js_code = f"""
+            <script>
+            const table = document.querySelectorAll('div[data-testid="stDataFrame"] table')[
+                document.querySelectorAll('div[data-testid="stDataFrame"] table').length - 1
+            ];
+            table.parentElement.scrollLeft = {first_col * 150};  // Approximate column width
+            </script>
+            """
+            st.components.v1.html(js_code, height=0)
+
+# Define the main page
+def main_page():
+    st.title("Search Across Excel Files")
 
     # Upload multiple Excel files
     st.header("Upload Excel Files")
@@ -60,41 +60,8 @@ def admin_page():
     if uploaded_files:
         for file in uploaded_files:
             file_name = file.name.split(".")[0]  # Use file name as header
-            cache_uploaded_file(file, file_name)
-
-# Define the main page
-def main_page():
-    # Apply custom styling for a polished design
-    st.markdown(
-        """
-        <style>
-        body {
-            background-color: #eaf4fc;
-            color: #333;
-            font-family: 'Helvetica Neue', sans-serif;
-        }
-        .stApp {
-            padding: 20px;
-            border-radius: 10px;
-        }
-        .header {
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Display logo if uploaded
-    if st.session_state.uploaded_logo is not None:
-        st.image(st.session_state.uploaded_logo, width=150, output_format="PNG")
-
-    # Page title
-    st.markdown("<div class='page-title'>Search Price Lists</div>", unsafe_allow_html=True)
+            if file_name not in st.session_state.uploaded_files:
+                st.session_state.uploaded_files[file_name] = pd.read_excel(file)
 
     # Predictive search bar
     search_query = st.text_input("Enter your search query:", key="search")
@@ -104,27 +71,19 @@ def main_page():
     if st.button("Clear Search"):
         st.session_state.search_query = ""
 
-    # Display search results or uploaded files
+    # Display search results
     if st.session_state.search_query:
-        st.markdown("<div class='search-results-header'>Search Results</div>", unsafe_allow_html=True)
         search_results = search_across_files(st.session_state.search_query, st.session_state.uploaded_files)
         if search_results:
-            for file_name, styled_data in search_results.items():
-                title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-                st.markdown(f"<div class='header' style='background-color: {title_bg_color};'>{file_name}</div>", unsafe_allow_html=True)
-                st.write(styled_data)
+            display_search_results(search_results)
         else:
             st.write("No matches found across the uploaded files.")
     else:
+        # Display uploaded files if no search query is entered
         if st.session_state.uploaded_files:
             for file_name, data in st.session_state.uploaded_files.items():
                 title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 st.markdown(f"<div class='header' style='background-color: {title_bg_color};'>{file_name}</div>", unsafe_allow_html=True)
-                st.write(data.head())  # Show preview of the uploaded files
+                st.write(data.head())  # Display preview of the file
 
-# Navigation menu with Main Page as default
-page = st.sidebar.selectbox("Choose a page", ["Main", "Admin"], index=0)
-if page == "Admin":
-    admin_page()
-else:
-    main_page()
+main_page()
