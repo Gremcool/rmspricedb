@@ -73,7 +73,7 @@ def add_sidebar(files):
             .logo {{
                 max-width: 100%;
                 height: auto;
-                width: 150px;  /* Adjust the size of the logo */
+                width: 200px;  /* Adjust the size of the logo */
             }}
         </style>
         <div class="logo-container">
