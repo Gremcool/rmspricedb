@@ -72,9 +72,9 @@ def main():
                 font-size: 24px;
             }
         </style>
-        <div class="header-banner">
-            Welcome to the RMS Price Database
-        </div>
+        # <div class="header-banner">
+        #     Welcome to the RMS Price Database
+        # </div>
         """,
         unsafe_allow_html=True
     )
