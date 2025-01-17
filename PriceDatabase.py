@@ -10,6 +10,9 @@ GITHUB_REPO_URL = "https://github.com/Gremcool/gremcool/tree/main/excel_files"
 # Raw GitHub content base URL
 GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/excel_files"
 
+# Logo URL from GitHub
+LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/logo/logo.jpg"
+
 # List of filenames to load from the GitHub repository
 EXCEL_FILE_NAMES = [
     "FINAL MASTER LIST AS OF 24 JULY 2024.xlsx",
@@ -57,12 +60,33 @@ def search_across_files(query, files):
             result[file_name] = highlight_matches(matches, query)
     return result
 
-# Function to add a sidebar for downloading Excel files
+# Function to add a sidebar for logo and downloading Excel files
 def add_sidebar(files):
+    # Add logo to sidebar
+    st.sidebar.markdown(
+        f"""
+        <style>
+            .logo-container {{
+                text-align: center;
+                margin-bottom: 20px;
+            }}
+            .logo {{
+                max-width: 100%;
+                height: auto;
+                width: 150px;  /* Adjust the size of the logo */
+            }}
+        </style>
+        <div class="logo-container">
+            <img src="{LOGO_URL}" class="logo" alt="Logo">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Add download section to sidebar
     st.sidebar.title("Download Full Excel Files")
     st.sidebar.write("Click on a file name to download it:")
     
-    # Generate download links dynamically when the button is clicked
     for file_name, data in files.items():
         if st.sidebar.button(f"Prepare Download: {file_name}"):
             towrite = BytesIO()
@@ -97,12 +121,12 @@ def main():
         unsafe_allow_html=True
     )
 
-    # st.title("RMS Price List")
+    st.title("RMS Price List")
 
     # Load files from GitHub
     uploaded_files = load_files_from_github()
 
-    # Add the sidebar for downloads
+    # Add the sidebar for downloads and logo
     add_sidebar(uploaded_files)
 
     # Predictive search bar
