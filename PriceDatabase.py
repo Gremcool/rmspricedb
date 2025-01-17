@@ -129,7 +129,7 @@ def main():
         unsafe_allow_html=True
     )
 
-    st.title("RMS Price List")
+    #st.title("RMS Price List")
 
     # Load files from GitHub
     uploaded_files = load_files_from_github()
