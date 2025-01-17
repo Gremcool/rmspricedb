@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as stl
 import pandas as pd
 import random
 import requests
@@ -92,11 +92,11 @@ def add_sidebar(files):
     )
 
     # Add download section to sidebar with styled header
-    st.sidebar.markdown('<div class="sidebar-header">Download Full Excel Files</div>', unsafe_allow_html=True)
-    st.sidebar.write("Click on a file name to download it:")
+    st.sidebar.markdown('<div class="sidebar-header">Click to Download Full Excel Files</div>', unsafe_allow_html=True)
+    # st.sidebar.write("Click on a file name to download it:")
     
     for file_name, data in files.items():
-        if st.sidebar.button(f"Prepare Download: {file_name}"):
+        if st.sidebar.button(f"Download: {file_name}"):
             towrite = BytesIO()
             data.to_excel(towrite, index=False, sheet_name="Sheet1")
             towrite.seek(0)
@@ -123,13 +123,13 @@ def main():
             }
         </style>
         <div class="header-banner">
-            Welcome to the RMS Price List Viewer!
+            Welcome to the RMS Price List Database!
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.title("RMS Price List")
+    #st.title("RMS Price List")
 
     # Load files from GitHub
     uploaded_files = load_files_from_github()
