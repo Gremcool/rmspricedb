@@ -72,15 +72,15 @@ def main():
                 font-size: 24px;
             }
         </style>
-        # <div class="header-banner">
-        #     Welcome to the RMS Price Database
-        # </div>
+        <div class="header-banner">
+            Welcome to the RMS Price Database
+        </div>
         """,
         unsafe_allow_html=True
     )
 
     # Add fallback header for environments where HTML might not render
-    st.header("Welcome to the RMS Price Database!")
+   # st.header("Welcome to the RMS Price Database!")
 
     # st.title("RMS Price Database")
 
