@@ -11,7 +11,7 @@ GITHUB_REPO_URL = "https://github.com/Gremcool/gremcool/tree/main/excel_files"
 GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/excel_files"
 
 # Logo URL from GitHub
-LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.jpg"
+LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.png"
 
 # List of filenames to load from the GitHub repository
 EXCEL_FILE_NAMES = [
@@ -60,44 +60,80 @@ def search_across_files(query, files):
             result[file_name] = highlight_matches(matches, query)
     return result
 
-# Function to add a sidebar for logo and downloading Excel files
+# Function to add a styled sidebar with logo and file download options
 def add_sidebar(files):
     # Add logo to sidebar
     st.sidebar.markdown(
         f"""
         <style>
+            /* Sidebar background color */
+            section[data-testid="stSidebar"] {{
+                background-color: black;
+                color: white;
+            }}
+
+            /* Logo container styling */
             .logo-container {{
                 text-align: center;
                 margin-bottom: 20px;
             }}
+
             .logo {{
                 max-width: 100%;
                 height: auto;
-                width: 200px;  /* Adjust the size of the logo */
+                width: 150px; /* Adjust the size of the logo */
+            }}
+
+            /* Download section styling */
+            .download-section {{
+                background-color: #1e1e1e; /* Dark background for the section */
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }}
+
+            /* Button styling */
+            .download-btn {{
+                background-color: blue; /* Default button color */
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+                text-decoration: none;
+                display: block;
+                margin-top: 10px;
+                transition: background-color 0.3s ease;
+            }}
+
+            .download-btn:hover {{
+                background-color: red; /* Color when hovered */
             }}
         </style>
+
         <div class="logo-container">
             <img src="{LOGO_URL}" class="logo" alt="Logo">
+        </div>
+
+        <div class="download-section">
+            <h4>Download Full Excel Files</h4>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # Add download section to sidebar
-    st.sidebar.title("Download Full Excel Files")
-    st.sidebar.write("Click on a file name to download it:")
-    
+    # Add download buttons for each file
     for file_name, data in files.items():
-        if st.sidebar.button(f"Prepare Download: {file_name}"):
-            towrite = BytesIO()
-            data.to_excel(towrite, index=False, sheet_name="Sheet1")
-            towrite.seek(0)
-            st.sidebar.download_button(
-                label=f"Download {file_name}",
-                data=towrite,
-                file_name=f"{file_name}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+        towrite = BytesIO()
+        data.to_excel(towrite, index=False, sheet_name="Sheet1")
+        towrite.seek(0)
+        st.sidebar.markdown(
+            f"""
+            <a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{towrite.getvalue().decode('latin1')}" download="{file_name}.xlsx" class="download-btn">
+                {file_name}
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
 
 # Main function for the app
 def main():
@@ -106,7 +142,7 @@ def main():
         """
         <style>
             .header-banner {
-                background-color: #46a0f3;
+                background-color: #4CAF50;
                 padding: 20px;
                 border-radius: 5px;
                 text-align: center;
@@ -115,13 +151,13 @@ def main():
             }
         </style>
         <div class="header-banner">
-            Welcome to the RMS Price List Database!
+            Welcome to the RMS Price List Viewer!
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # st.title("RMS Price List")
+    st.title("RMS Price List")
 
     # Load files from GitHub
     uploaded_files = load_files_from_github()
