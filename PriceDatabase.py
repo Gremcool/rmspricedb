@@ -64,7 +64,7 @@ def main():
         """
         <style>
             .header-banner {
-                background-color: #4CAF50;
+                background-color: #46a0f3;
                 padding: 20px;
                 border-radius: 5px;
                 text-align: center;
