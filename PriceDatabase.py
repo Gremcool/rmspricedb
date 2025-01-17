@@ -11,7 +11,7 @@ GITHUB_REPO_URL = "https://github.com/Gremcool/gremcool/tree/main/excel_files"
 GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/excel_files"
 
 # Logo URL from GitHub
-LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.png"
+LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.jpg"
 
 # List of filenames to load from the GitHub repository
 EXCEL_FILE_NAMES = [
@@ -73,10 +73,10 @@ def add_sidebar(files):
             .logo {{
                 max-width: 100%;
                 height: auto;
-                width: 150px;  /* Adjust the size of the logo */
+                width: 200px;  /* Adjust the size of the logo */
             }}
             .sidebar-header {{
-                background-color: #1E3A8A; /* Blue background */
+                background-color: #50a3f0; /* Blue background */
                 color: white;
                 padding: 10px;
                 text-align: center;
@@ -114,7 +114,7 @@ def main():
         """
         <style>
             .header-banner {
-                background-color: #4CAF50;
+                background-color: #50a3f0;
                 padding: 20px;
                 border-radius: 5px;
                 text-align: center;
