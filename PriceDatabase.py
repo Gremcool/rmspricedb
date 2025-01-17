@@ -106,7 +106,7 @@ def main():
         """
         <style>
             .header-banner {
-                background-color: #4CAF50;
+                background-color: #46a0f3;
                 padding: 20px;
                 border-radius: 5px;
                 text-align: center;
@@ -115,7 +115,7 @@ def main():
             }
         </style>
         <div class="header-banner">
-            Welcome to the RMS Price List Viewer!
+            Welcome to the RMS Price List Database!
         </div>
         """,
         unsafe_allow_html=True
