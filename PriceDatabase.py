@@ -61,18 +61,19 @@ def search_across_files(query, files):
 def add_sidebar(files):
     st.sidebar.title("Download Full Excel Files")
     st.sidebar.write("Click on a file name to download it:")
+    
+    # Generate download links dynamically when the button is clicked
     for file_name, data in files.items():
-        # Convert the DataFrame to an Excel file
-        towrite = BytesIO()
-        data.to_excel(towrite, index=False, sheet_name="Sheet1")
-        towrite.seek(0)
-        # Add a download button for each file
-        st.sidebar.download_button(
-            label=f"Download {file_name}",
-            data=towrite,
-            file_name=f"{file_name}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
+        if st.sidebar.button(f"Prepare Download: {file_name}"):
+            towrite = BytesIO()
+            data.to_excel(towrite, index=False, sheet_name="Sheet1")
+            towrite.seek(0)
+            st.sidebar.download_button(
+                label=f"Download {file_name}",
+                data=towrite,
+                file_name=f"{file_name}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
 
 # Main function for the app
 def main():
