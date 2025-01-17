@@ -1,23 +1,36 @@
 import streamlit as st
 import pandas as pd
 import random
+import requests
+from io import BytesIO
 
-# Set up session state to store uploaded files and search query
-if "uploaded_files" not in st.session_state:
-    st.session_state.uploaded_files = {}
-if "uploaded_logo" not in st.session_state:
-    st.session_state.uploaded_logo = None
-if "search_query" not in st.session_state:
-    st.session_state.search_query = ""
+# GitHub repository URL where Excel files are stored
+GITHUB_REPO_URL = "https://github.com/Gremcool/gremcool/tree/main/excel_files"
 
-# Function to cache the uploaded files
-def cache_uploaded_file(file, file_name):
-    if file_name not in st.session_state.uploaded_files:
-        st.session_state.uploaded_files[file_name] = pd.read_excel(file)
+# Raw GitHub content base URL
+GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/excel_files"
+
+# List of filenames to load from the GitHub repository
+EXCEL_FILE_NAMES = [
+    "FINAL MASTER LIST AS OF 24 JULY 2024.xlsx",
+    "First Draft PriceList.xlsx",
+    "SA Price List.xlsx",  # Add all your file names here
+]
+# Function to fetch Excel files from GitHub
+def load_files_from_github():
+    files = {}
+    for file_name in EXCEL_FILE_NAMES:
+        file_url = f"{GITHUB_RAW_BASE_URL}/{file_name}"
+        response = requests.get(file_url)
+        if response.status_code == 200:
+            file_data = pd.read_excel(BytesIO(response.content))
+            files[file_name.split(".")[0]] = file_data
+        else:
+            st.warning(f"Failed to load {file_name} from GitHub. Please check the URL.")
+    return files
 
 # Function to style DataFrame and highlight matches
 def highlight_matches(data, query):
-    """Highlight cells containing the search query in yellow."""
     return data.style.applymap(
         lambda val: "background-color: yellow" if query.lower() in str(val).lower() else ""
     ).set_table_styles(
@@ -36,7 +49,6 @@ def highlight_matches(data, query):
 
 # Function to search across files and highlight results
 def search_across_files(query, files):
-    """Search for the query in all uploaded files and return highlighted results."""
     result = {}
     for file_name, data in files.items():
         matches = data[data.apply(lambda row: row.astype(str).str.contains(query, case=False, na=False).any(), axis=1)]
@@ -44,87 +56,36 @@ def search_across_files(query, files):
             result[file_name] = highlight_matches(matches, query)
     return result
 
-# Define the admin page
-def admin_page():
-    st.title("Admin Page")
-    st.sidebar.header("Admin Controls")
+# Main function for the app
+def main():
+    st.title("RMS Price List")
 
-    # Upload RMS logo
-    logo = st.sidebar.file_uploader("Upload RMS Logo", type=["png", "jpg", "jpeg"], key="logo")
-    if logo is not None:
-        st.session_state.uploaded_logo = logo
-
-    # Upload multiple Excel files
-    st.header("Upload Excel Files")
-    uploaded_files = st.file_uploader("Upload Excel files", type=["xlsx"], accept_multiple_files=True, key="excel")
-    if uploaded_files:
-        for file in uploaded_files:
-            file_name = file.name.split(".")[0]  # Use file name as header
-            cache_uploaded_file(file, file_name)
-
-# Define the main page
-def main_page():
-    # Apply custom styling for a polished design
-    st.markdown(
-        """
-        <style>
-        body {
-            background-color: #eaf4fc;
-            color: #333;
-            font-family: 'Helvetica Neue', sans-serif;
-        }
-        .stApp {
-            padding: 20px;
-            border-radius: 10px;
-        }
-        .header {
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Display logo if uploaded
-    if st.session_state.uploaded_logo is not None:
-        st.image(st.session_state.uploaded_logo, width=150, output_format="PNG")
-
-    # Page title
-    st.markdown("<div class='page-title'>Search Price Lists</div>", unsafe_allow_html=True)
+    # Load files from GitHub
+    # st.write("Loading files from GitHub...")
+    uploaded_files = load_files_from_github()
 
     # Predictive search bar
-    search_query = st.text_input("Enter your search query:", key="search")
-    st.session_state.search_query = search_query
-
-    # Clear search button
+    search_query = st.text_input("Enter product you want to search:")
     if st.button("Clear Search"):
-        st.session_state.search_query = ""
+        search_query = ""
 
-    # Display search results or uploaded files
-    if st.session_state.search_query:
-        st.markdown("<div class='search-results-header'>Search Results</div>", unsafe_allow_html=True)
-        search_results = search_across_files(st.session_state.search_query, st.session_state.uploaded_files)
+    # Display search results or all files
+    if search_query:
+        st.header("Search Results")
+        search_results = search_across_files(search_query, uploaded_files)
         if search_results:
             for file_name, styled_data in search_results.items():
                 title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-                st.markdown(f"<div class='header' style='background-color: {title_bg_color};'>{file_name}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='background-color: {title_bg_color}; padding: 10px; border-radius: 5px; color: white;'>{file_name}</div>", unsafe_allow_html=True)
                 st.write(styled_data)
         else:
-            st.write("No matches found across the uploaded files.")
+            st.write("No matches found.")
     else:
-        if st.session_state.uploaded_files:
-            for file_name, data in st.session_state.uploaded_files.items():
-                title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-                st.markdown(f"<div class='header' style='background-color: {title_bg_color};'>{file_name}</div>", unsafe_allow_html=True)
-                st.write(data.head())  # Show preview of the uploaded files
+        st.header("All Files")
+        for file_name, data in uploaded_files.items():
+            title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+            st.markdown(f"<div style='background-color: {title_bg_color}; padding: 10px; border-radius: 5px; color: white;'>{file_name}</div>", unsafe_allow_html=True)
+            st.write(data.head())  # Show preview of the data
 
-# Navigation menu with Main Page as default
-page = st.sidebar.selectbox("Choose a page", ["Main", "Admin"], index=0)
-if page == "Admin":
-    admin_page()
-else:
-    main_page()
+if __name__ == "__main__":
+    main()
