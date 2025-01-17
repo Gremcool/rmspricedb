@@ -11,7 +11,7 @@ GITHUB_REPO_URL = "https://github.com/Gremcool/gremcool/tree/main/excel_files"
 GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/excel_files"
 
 # Logo URL from GitHub
-LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.png"
+LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.jpg"
 
 # List of filenames to load from the GitHub repository
 EXCEL_FILE_NAMES = [
