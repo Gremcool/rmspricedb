@@ -93,7 +93,7 @@ def add_sidebar(files):
 
     # Add download section to sidebar with styled header
     st.sidebar.markdown('<div class="sidebar-header">Download Full Excel Files</div>', unsafe_allow_html=True)
-    # st.sidebar.write("Click on a file name to download it:")
+    st.sidebar.write(" ")
     
     for file_name, data in files.items():
         if st.sidebar.button(f"Prepare Download: {file_name}"):
