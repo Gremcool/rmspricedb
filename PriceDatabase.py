@@ -80,7 +80,7 @@ def main():
     )
 
     # Add fallback header for environments where HTML might not render
-    # st.header("Welcome to the RMS Price Database!")
+    st.header("Welcome to the RMS Price Database!")
 
     # st.title("RMS Price Database")
 
