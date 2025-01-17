@@ -25,7 +25,7 @@ def load_files_from_github():
         response = requests.get(file_url)
         if response.status_code == 200:
             file_data = pd.read_excel(BytesIO(response.content))
-            files[file_name.split(".")[0]] = file_data
+            files[file_name] = file_data
         else:
             st.warning(f"Failed to load {file_name} from GitHub. Please check the URL.")
     return files
@@ -57,6 +57,23 @@ def search_across_files(query, files):
             result[file_name] = highlight_matches(matches, query)
     return result
 
+# Function to add a sidebar for downloading Excel files
+def add_sidebar(files):
+    st.sidebar.title("Download Full Excel Files")
+    st.sidebar.write("Click on a file name to download it:")
+    for file_name, data in files.items():
+        # Convert the DataFrame to an Excel file
+        towrite = BytesIO()
+        data.to_excel(towrite, index=False, sheet_name="Sheet1")
+        towrite.seek(0)
+        # Add a download button for each file
+        st.sidebar.download_button(
+            label=f"Download {file_name}",
+            data=towrite,
+            file_name=f"{file_name}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
 # Main function for the app
 def main():
     # Add a header banner
@@ -64,7 +81,7 @@ def main():
         """
         <style>
             .header-banner {
-                background-color: #46a0f3;
+                background-color: #4CAF50;
                 padding: 20px;
                 border-radius: 5px;
                 text-align: center;
@@ -73,19 +90,19 @@ def main():
             }
         </style>
         <div class="header-banner">
-            Welcome to the RMS Price Database
+            Welcome to the RMS Price List Viewer!
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    # Add fallback header for environments where HTML might not render
-   # st.header("Welcome to the RMS Price Database!")
-
-    # st.title("RMS Price Database")
+    st.title("RMS Price List")
 
     # Load files from GitHub
     uploaded_files = load_files_from_github()
+
+    # Add the sidebar for downloads
+    add_sidebar(uploaded_files)
 
     # Predictive search bar
     search_query = st.text_input("Enter product you want to search:")
