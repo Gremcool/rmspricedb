@@ -1,4 +1,4 @@
-import streamlit as stl
+import streamlit as st
 import pandas as pd
 import random
 import requests
@@ -11,7 +11,7 @@ GITHUB_REPO_URL = "https://github.com/Gremcool/gremcool/tree/main/excel_files"
 GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/excel_files"
 
 # Logo URL from GitHub
-LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.jpg"
+LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.png"
 
 # List of filenames to load from the GitHub repository
 EXCEL_FILE_NAMES = [
@@ -73,10 +73,10 @@ def add_sidebar(files):
             .logo {{
                 max-width: 100%;
                 height: auto;
-                width: 200px;  /* Adjust the size of the logo */
+                width: 150px;  /* Adjust the size of the logo */
             }}
             .sidebar-header {{
-                background-color: #50a3f0; /* Blue background */
+                background-color: #1E3A8A; /* Blue background */
                 color: white;
                 padding: 10px;
                 text-align: center;
@@ -92,11 +92,11 @@ def add_sidebar(files):
     )
 
     # Add download section to sidebar with styled header
-    st.sidebar.markdown('<div class="sidebar-header">Click to Download Full Excel Files</div>', unsafe_allow_html=True)
-    # st.sidebar.write("Click on a file name to download it:")
+    st.sidebar.markdown('<div class="sidebar-header">Download Full Excel Files</div>', unsafe_allow_html=True)
+    st.sidebar.write("Click on a file name to download it:")
     
     for file_name, data in files.items():
-        if st.sidebar.button(f"Download: {file_name}"):
+        if st.sidebar.button(f"Prepare Download: {file_name}"):
             towrite = BytesIO()
             data.to_excel(towrite, index=False, sheet_name="Sheet1")
             towrite.seek(0)
@@ -114,7 +114,7 @@ def main():
         """
         <style>
             .header-banner {
-                background-color: #50a3f0;
+                background-color: #4CAF50;
                 padding: 20px;
                 border-radius: 5px;
                 text-align: center;
@@ -123,13 +123,13 @@ def main():
             }
         </style>
         <div class="header-banner">
-            Welcome to the RMS Price List Database!
+            Welcome to the RMS Price List Viewer!
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    #st.title("RMS Price List")
+    st.title("RMS Price List")
 
     # Load files from GitHub
     uploaded_files = load_files_from_github()
