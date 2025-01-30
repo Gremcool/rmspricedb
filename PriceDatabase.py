@@ -20,7 +20,8 @@ EXCEL_FILE_NAMES = [
     "SA Price List.xlsx",  # Add all your file names here
 ]
 
-# Function to fetch Excel files from GitHub
+# Function to fetch and cache Excel files from GitHub
+@st.cache_data
 def load_files_from_github():
     files = {}
     for file_name in EXCEL_FILE_NAMES:
@@ -51,114 +52,62 @@ def highlight_matches(data, query):
         ]
     )
 
-# Function to search across files and highlight results
+# Optimized search function
 def search_across_files(query, files):
     result = {}
+    query_lower = query.lower()
     for file_name, data in files.items():
-        matches = data[data.apply(lambda row: row.astype(str).str.contains(query, case=False, na=False).any(), axis=1)]
+        matches = data[data.astype(str).apply(lambda row: row.str.contains(query_lower, case=False, na=False).any(), axis=1)]
         if not matches.empty:
             result[file_name] = highlight_matches(matches, query)
     return result
 
 # Function to add a sidebar for logo and downloading Excel files
 def add_sidebar(files):
-    # Add logo to sidebar
-    st.sidebar.markdown(
-        f"""
-        <style>
-            .logo-container {{
-                text-align: center;
-                margin-bottom: 20px;
-            }}
-            .logo {{
-                max-width: 100%;
-                height: auto;
-                width: 200px;  /* Adjust the size of the logo */
-            }}
-            .sidebar-header {{
-                background-color: #1E3A8A; /* Blue background */
-                color: white;
-                padding: 10px;
-                text-align: center;
-                font-size: 18px;
-                border-radius: 5px;
-            }}
-        </style>
-        <div class="logo-container">
-            <img src="{LOGO_URL}" class="logo" alt="Logo">
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Add download section to sidebar with styled header
-    st.sidebar.markdown('<div class="sidebar-header">Download Full Excel Files</div>', unsafe_allow_html=True)
-    st.sidebar.write(" ")
+    st.sidebar.image(LOGO_URL, width=200)
+    st.sidebar.markdown("**Download Full Excel Files**")
     
     for file_name, data in files.items():
-        if st.sidebar.button(f"Prepare Download: {file_name}"):
-            towrite = BytesIO()
-            data.to_excel(towrite, index=False, sheet_name="Sheet1")
-            towrite.seek(0)
-            st.sidebar.download_button(
-                label=f"Download {file_name}",
-                data=towrite,
-                file_name=f"{file_name}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+        towrite = BytesIO()
+        data.to_excel(towrite, index=False, sheet_name="Sheet1")
+        towrite.seek(0)
+        st.sidebar.download_button(
+            label=f"Download {file_name}",
+            data=towrite,
+            file_name=f"{file_name}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
 
 # Main function for the app
 def main():
-    # Add a header banner
-    st.markdown(
-        """
-        <style>
-            .header-banner {
-                background-color: #50a3f0;
-                padding: 20px;
-                border-radius: 5px;
-                text-align: center;
-                color: white;
-                font-size: 24px;
-            }
-        </style>
-        <div class="header-banner">
+    st.markdown("""
+        <div style='background-color: #50a3f0; padding: 20px; border-radius: 5px; text-align: center; color: white; font-size: 24px;'>
             Welcome to the RMS Price Database!
         </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    #st.title("RMS Price List")
-
-    # Load files from GitHub
+    """, unsafe_allow_html=True)
+    
     uploaded_files = load_files_from_github()
-
-    # Add the sidebar for downloads and logo
     add_sidebar(uploaded_files)
-
-    # Predictive search bar
+    
     search_query = st.text_input("Enter product you want to search:")
+    
     if st.button("Clear Search"):
         search_query = ""
-
-    # Display search results or all files
+    
     if search_query:
         st.header("Search Results")
         search_results = search_across_files(search_query, uploaded_files)
         if search_results:
             for file_name, styled_data in search_results.items():
-                title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-                st.markdown(f"<div style='background-color: {title_bg_color}; padding: 10px; border-radius: 5px; color: white;'>{file_name}</div>", unsafe_allow_html=True)
+                st.markdown(f"### {file_name}")
                 st.write(styled_data)
         else:
             st.write("No matches found.")
     else:
         st.header("All Files")
         for file_name, data in uploaded_files.items():
-            title_bg_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-            st.markdown(f"<div style='background-color: {title_bg_color}; padding: 10px; border-radius: 5px; color: white;'>{file_name}</div>", unsafe_allow_html=True)
-            st.write(data.head())  # Show preview of the data
+            st.markdown(f"### {file_name}")
+            st.write(data.head())
 
 if __name__ == "__main__":
     main()
