@@ -17,6 +17,8 @@ LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo
 EXCEL_FILE_NAMES = [
     "FINAL MASTER LIST AS OF 24 JULY 2024.xlsx",
     "First Draft PriceList.xlsx",
+    "RMS,2025.xlsx",
+    "Sirilanka Estimated_Item_2024.xlsx",
     "SA Price List.xlsx",  # Add all your file names here
 ]
 
