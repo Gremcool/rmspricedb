@@ -15,11 +15,11 @@ LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo
 
 # List of filenames to load from the GitHub repository
 EXCEL_FILE_NAMES = [
-    "FINAL MASTER LIST AS OF 24 JULY 2024.xlsx",
-    "First Draft PriceList.xlsx",
-    "RMS,2025.xlsx",
-    "Sirilanka Estimated_Item_2024.xlsx",
-    "SA Price List.xlsx",  # Add all your file names here
+    "FINAL MASTER LIST RMS JULY 2024.xlsx",
+    "RMS Price list 2025.xlsx",
+    "SA Price List 2022.xlsx",
+    "Sri Lanka Price List 2024.xlsx",
+    "Unicef African Price List.xlsx",  # Add all your file names here
 ]
 
 # Function to fetch and cache Excel files from GitHub
