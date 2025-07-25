@@ -1,77 +1,56 @@
 import streamlit as st
 import pandas as pd
+import zipfile
+import io
+import re
 import requests
-from io import BytesIO
-import altair as alt
+import plotly.express as px
 
-# --- Constants ---
-GITHUB_RAW_BASE_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/excel_files"
-LOGO_URL = "https://raw.githubusercontent.com/Gremcool/gremcool/main/assets/logo.jpg"
+st.set_page_config(page_title="💊 Price Database Search", layout="wide")
+st.title("💊 Price Database Explorer")
 
-EXCEL_FILE_NAMES = [
-    "FINAL MASTER LIST RMS JULY 2024.xlsx",
-    "RMS Price list 2025.xlsx",
-    "SA Price List 2022.xlsx",
-    "Sri Lanka Price List 2024.xlsx",
-    "Unicef African Price List.xlsx",
-]
-
-# --- Load Excel Files from GitHub ---
 @st.cache_data
-def load_files_from_github():
-    files = {}
-    for file_name in EXCEL_FILE_NAMES:
-        file_url = f"{GITHUB_RAW_BASE_URL}/{file_name}"
-        response = requests.get(file_url)
-        if response.status_code == 200:
-            df = pd.read_excel(BytesIO(response.content))
-            files[file_name] = df
-        else:
-            st.warning(f"⚠️ Could not load {file_name}")
-    return files
+def load_excel_file_from_github(file_url):
+    response = requests.get(file_url)
+    with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+        file_data = {}
+        for file in z.namelist():
+            if file.endswith(".xlsx") or file.endswith(".xls"):
+                with z.open(file) as f:
+                    xls = pd.ExcelFile(f)
+                    for sheet_name in xls.sheet_names:
+                        df = xls.parse(sheet_name)
+                        file_data[file] = df
+                        break  # Only take the first sheet
+        return file_data
 
-# --- Highlight matches in table ---
-def highlight_matches(data, query):
-    return data.style.applymap(
-        lambda val: "background-color: yellow" if query.lower() in str(val).lower() else ""
-    ).set_table_styles([
-        {
-            "selector": "thead th",
-            "props": [
-                ("background-color", "black"),
-                ("color", "white"),
-                ("font-weight", "bold"),
-                ("text-align", "center"),
-            ],
-        }
-    ])
+def highlight_matches(val, pattern):
+    if pd.isna(val):
+        return ""
+    try:
+        val_str = str(val)
+        match = re.search(pattern, val_str, flags=re.IGNORECASE)
+        if match:
+            return val_str.replace(match.group(0), f"🟨**{match.group(0)}**")
+        return val_str
+    except Exception:
+        return str(val)
 
-# --- Search all files ---
-def search_across_files(query, files):
-    result = {}
-    query_lower = query.lower()
-    for file_name, df in files.items():
-        matches = df[df.astype(str).apply(lambda row: row.str.contains(query_lower, case=False, na=False).any(), axis=1)]
-        if not matches.empty:
-            result[file_name] = highlight_matches(matches, query)
-    return result
+def search_data(file_data, search_term):
+    if not search_term:
+        return {}
 
-# --- Sidebar: logo + download buttons ---
-def add_sidebar(files):
-    st.sidebar.image(LOGO_URL, width=200)
-    st.sidebar.markdown("### 📥 Download Full Excel Files")
-    for file_name, df in files.items():
-        towrite = BytesIO()
-        df.to_excel(towrite, index=False, sheet_name="Sheet1")
-        towrite.seek(0)
-        st.sidebar.download_button(
-            label=f"Download {file_name}",
-            data=towrite,
-            file_name=file_name,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
+    search_results = {}
+    pattern = re.escape(search_term)
+    for file_name, df in file_data.items():
+        mask = df.apply(lambda row: row.astype(str).str.contains(pattern, case=False, na=False)).any(axis=1)
+        filtered_df = df[mask]
+        if not filtered_df.empty:
+            styled_df = filtered_df.copy()
+            styled_df = styled_df.applymap(lambda val: highlight_matches(val, pattern))
+            search_results[file_name] = styled_df
+    return search_results
 
-# --- Show elegant graph for matched item prices ---
 def show_price_graph(search_results, price_column="Unit Price (USD)", product_column="Product Name", unit_column="Unit"):
     price_data = []
 
@@ -79,83 +58,96 @@ def show_price_graph(search_results, price_column="Unit Price (USD)", product_co
         df = styled_data.data if hasattr(styled_data, 'data') else styled_data.copy()
 
         if price_column in df.columns:
-            try:
-                prod_col = product_column if product_column in df.columns else df.columns[0]
-                unit_col = unit_column if unit_column in df.columns else None
+            df = df.dropna(subset=[price_column])
+            df[price_column] = pd.to_numeric(df[price_column], errors="coerce")
+            df = df.dropna(subset=[price_column])
 
-                df[price_column] = pd.to_numeric(df[price_column], errors="coerce")
-                df = df.dropna(subset=[price_column])
+            for _, row in df.iterrows():
+                product = str(row.get(product_column, "N/A"))
+                price = row[price_column]
+                unit = str(row.get(unit_column, "N/A")) if unit_column in df.columns else "N/A"
 
-                for _, row in df.iterrows():
-                    price_data.append({
-                        "File": file_name,
-                        "Product": str(row.get(prod_col, "N/A")),
-                        "Price (USD)": round(row[price_column], 2),
-                        "Unit": str(row.get(unit_col, "N/A")) if unit_col else "N/A",
-                    })
+                price_data.append({
+                    "File": file_name,
+                    "Product": product,
+                    "Price (USD)": round(price, 2),
+                    "Unit": unit,
+                })
 
-            except Exception as e:
-                st.warning(f"Error processing {file_name}: {e}")
+    if not price_data:
+        st.info("🔍 No valid price data found for the searched item.")
+        return
 
-    if price_data:
-        df_plot = pd.DataFrame(price_data)
-        df_plot.sort_values("Price (USD)", ascending=False, inplace=True)
+    df_plot = pd.DataFrame(price_data)
+    df_plot = df_plot.sort_values("Price (USD)", ascending=False)
 
-        st.markdown("### 📊 Price Comparison of Searched Item Across Files")
+    fig = px.bar(
+        df_plot,
+        x="File",
+        y="Price (USD)",
+        color="File",
+        hover_data=["Product", "Unit"],
+        text="Price (USD)",
+        title="💲 Price Comparison Chart",
+        labels={"File": "Excel File", "Price (USD)": "Unit Price (USD)"},
+    )
 
-        chart = alt.Chart(df_plot).mark_bar(size=25).encode(
-            x=alt.X("File:N", title="File", sort="-y"),
-            y=alt.Y("Price (USD):Q", title="Price (USD)"),
-            color=alt.Color("File:N", legend=None),
-            tooltip=[
-                alt.Tooltip("File", title="Source File"),
-                alt.Tooltip("Product", title="Product Name"),
-                alt.Tooltip("Price (USD):Q", title="Price"),
-                alt.Tooltip("Unit", title="Unit"),
-            ],
-        ).properties(width=800, height=400)
+    fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+    fig.update_layout(
+        height=500,
+        showlegend=False,
+        xaxis_title="Source File",
+        yaxis_title="Price (USD)",
+        font=dict(size=14),
+        bargap=0.3
+    )
 
-        st.altair_chart(chart, use_container_width=True)
+    st.markdown("<div id='price-chart'></div>", unsafe_allow_html=True)
+    st.plotly_chart(fig, use_container_width=True)
 
-        with st.expander("🔍 View Chart Data"):
-            st.dataframe(df_plot, use_container_width=True)
+    with st.expander("🧾 View Matching Price Data"):
+        st.dataframe(df_plot, use_container_width=True)
+
+# --- MAIN APP ---
+st.sidebar.header("📁 File Source")
+github_url = st.sidebar.text_input("Enter GitHub ZIP URL:", value="https://github.com/nsongaphilip/pricedbtest/raw/main/datastore.zip")
+
+with st.sidebar:
+    if st.button("🔄 Reload Files"):
+        st.cache_data.clear()
+
+file_data = load_excel_file_from_github(github_url)
+file_names = list(file_data.keys())
+
+st.sidebar.markdown("### 🔍 Search")
+search_term = st.sidebar.text_input("Search by medicine name or keyword:")
+
+# 👉 Scroll Button
+if search_term:
+    st.sidebar.markdown(
+        """
+        <a href="#price-chart">
+            <button style="background-color:#1f77b4;color:white;padding:8px 16px;border:none;border-radius:6px;cursor:pointer;">
+                📉 Go to Chart
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
+
+if search_term:
+    search_results = search_data(file_data, search_term)
+    if search_results:
+        st.subheader(f"🔎 Search Results for: `{search_term}`")
+        show_price_graph(search_results)
+
+        for file_name, df in search_results.items():
+            st.markdown(f"#### 📄 Results in: `{file_name}`")
+            st.dataframe(df, use_container_width=True)
     else:
-        st.info("No valid price data found for the searched item.")
-
-# --- Main App ---
-def main():
-    st.markdown("""
-        <div style='background-color: #50a3f0; padding: 20px; border-radius: 5px; text-align: center; color: white; font-size: 24px;'>
-            💊 Welcome to the RMS Price Database!
-        </div>
-    """, unsafe_allow_html=True)
-
-    uploaded_files = load_files_from_github()
-    add_sidebar(uploaded_files)
-
-    search_query = st.text_input("🔍 Enter product name to search:")
-
-    if st.button("Clear Search"):
-        search_query = ""
-
-    if search_query:
-        st.header("🔎 Search Results")
-        search_results = search_across_files(search_query, uploaded_files)
-        if search_results:
-            for file_name, styled_data in search_results.items():
-                st.markdown(f"#### 📁 {file_name}")
-                st.write(styled_data)
-
-            st.markdown("---")
-            show_price_graph(search_results, price_column="Unit Price (USD)")
-        else:
-            st.warning("No matches found.")
-    else:
-        st.header("📂 Preview of All Files")
-        for file_name, df in uploaded_files.items():
-            st.markdown(f"#### 📁 {file_name}")
-            st.write(df.head())
-
-# --- Run App ---
-if __name__ == "__main__":
-    main()
+        st.warning("❌ No matches found for your search.")
+else:
+    st.info("👈 Enter a search term in the sidebar to begin.")
+    st.markdown("### 📂 Available Files")
+    for file_name in file_names:
+        st.markdown(f"- {file_name}")
