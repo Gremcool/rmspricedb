@@ -72,7 +72,7 @@ def add_sidebar(files):
         )
 
 # --- Show elegant graph for matched item prices ---
-def show_price_graph(search_results, price_column="Price (USD)", product_column="Product Name", unit_column="Unit"):
+def show_price_graph(search_results, price_column="Unit Price (USD)", product_column="Product Name", unit_column="Unit"):
     price_data = []
 
     for file_name, styled_data in search_results.items():
@@ -80,11 +80,9 @@ def show_price_graph(search_results, price_column="Price (USD)", product_column=
 
         if price_column in df.columns:
             try:
-                # Fallback if expected columns are not present
                 prod_col = product_column if product_column in df.columns else df.columns[0]
                 unit_col = unit_column if unit_column in df.columns else None
 
-                # Clean price column
                 df[price_column] = pd.to_numeric(df[price_column], errors="coerce")
                 df = df.dropna(subset=[price_column])
 
@@ -119,7 +117,6 @@ def show_price_graph(search_results, price_column="Price (USD)", product_column=
 
         st.altair_chart(chart, use_container_width=True)
 
-        # Optional: expandable data table
         with st.expander("🔍 View Chart Data"):
             st.dataframe(df_plot, use_container_width=True)
     else:
@@ -150,7 +147,7 @@ def main():
                 st.write(styled_data)
 
             st.markdown("---")
-            show_price_graph(search_results)
+            show_price_graph(search_results, price_column="Unit Price (USD)")
         else:
             st.warning("No matches found.")
     else:
