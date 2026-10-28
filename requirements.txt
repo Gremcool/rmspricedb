@@ -1,2 +1,6 @@
-openpyxl==3.1.5
+streamlit>=1.55
+pandas>=2.1
+openpyxl>=3.1.5
+requests
 plotly
+rapidfuzz
