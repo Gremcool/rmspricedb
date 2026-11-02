@@ -1,64 +1,21 @@
-# RMS Price Database
+# OAG Preliminary Information Request Tracker
 
-Search and compare medicine, consumable and lab prices across your price lists. Search is instant (it
-runs in the browser), results show USD or RWF, and a compare drawer ranks products side by side.
-Light and dark themes. New lists can be added from the app.
+Standalone tracker for the OAG "Preliminary Information Request" (FYE 30 June 2026).
 
-## Run
-```
-pip install -r requirements.txt
-streamlit run PriceDatabase.py
-```
+## Run locally
+    python -m pip install -r requirements.txt
+    python -m streamlit run app.py
 
-## How it is built
-| File | Job |
-|---|---|
-| `PriceDatabase.py` | Streamlit shell: loads the page, the **Manage** dialog (upload / remove / backup), optional password |
-| `ui/index.html` | The whole interface as one HTML page (search, results, compare, theme). Edit it like any web page |
-| `database.py` | SQLite storage: `datasets` (one row per list) and `prices` |
-| `importer.py` | Recognises each file's layout and cleans it |
-| `pricedb.sqlite` | The database, already filled with your six lists |
-| `datasets/` | The original Excel files. Used only to rebuild the database if `pricedb.sqlite` is missing or empty |
+## Data
+Everything (requests, attached documents, comments, activity log) is stored in ONE SQLite file,
+`pbc_tracker.db`, created on first run. On first run the 97 requests from `pbc_seed.json` are loaded.
+Set the `DATABASE_PATH` environment variable (e.g. a Railway volume such as `/data/pbc_tracker.db`)
+so the data survives redeploys. Back up that single file to back up everything.
 
-## Adding or updating a list
-Click **Manage** (top right) → **Add or update a list** and upload an Excel or CSV file.
-
-- The six existing layouts (RHIA, RMS Master, RMS 2025, South Africa, Sri Lanka, UNICEF) are recognised by
-  their columns, so renamed files still work.
-- Any other file needs a product or description column and a price column named like `Unit Price (USD)` or
-  `Unit Price (RWF)`. Pack, category and note columns are optional. If the price column does not say its
-  currency, the app asks.
-- Uploading a list with the same name **replaces** it, which is how you update a list with a newer file.
-- Rows with no price and exact duplicates are left out (the counts are shown under Manage > Lists).
-
-## Keeping changes (important on free hosting)
-Changes are saved to `pricedb.sqlite` on the server's disk. Free hosts such as Streamlit Community Cloud
-reset that disk when the app restarts. To keep a change:
-1. **Manage > Backup > Download database**
-2. Replace `pricedb.sqlite` in your GitHub repo with that file.
-
-If your host has a persistent volume mounted at `/data`, the app uses it automatically and nothing needs
-committing.
-
-## Admin password (optional but recommended if the app is public)
-Without a password, anyone who opens the app can use Manage. To require one, set `admin_password` in
-`.streamlit/secrets.toml` (see `secrets.toml.example`) or set the `RMS_ADMIN_PASSWORD` environment variable.
-
-## Currency
-Every list is shown in USD and RWF at a flat **1 USD = 1,300 RWF**, the rate your existing lists already use.
-RHIA is published in RWF only, so its USD is derived at the same rate. To change the rate, edit
-`FX_RWF_PER_USD` in `importer.py` and re-import the lists.
-
-## If something looks wrong
-- **The page says "Loading prices…" and stays there:** the page itself needs nothing from the internet, so this means
-  its data did not arrive. Reload once; if it persists, the message that replaces it (or a red box above the page)
-  names the problem. Please send me that message.
-- **"The price database could not be opened":** the app folder may be read-only or on a synced drive (Google Drive,
-  OneDrive). The app then tries a private copy in the system temp folder automatically. Keep the project in a normal
-  local folder when running it on your computer.
-- **Manage does nothing:** scroll to the bottom of the page; a plain Manage button is left there as a backup.
-- Tested on Streamlit 1.40 and 1.66.
-
-## Uploading to GitHub
-Upload the **contents** of this folder, including `pricedb.sqlite`, `datasets/`, `ui/` and `.streamlit/`.
-(`.streamlit` starts with a dot and is easy to miss; the app also works without it.)
+## Files
+- `app.py` – entry point
+- `pbc.py` – user interface
+- `pbc_db.py` – database layer
+- `pbc_parser.py` – Word import (keeps bold / lists / links) and HTML sanitiser
+- `pbc_export.py` – Excel, Word and ZIP exports
+- `pbc_seed.json` – the 97 requests parsed from the OAG Word document

@@ -1,3 +1,7 @@
-streamlit>=1.40
-pandas>=2.1
-openpyxl>=3.1.5
+streamlit
+pandas
+python-docx
+htmldocx
+beautifulsoup4
+streamlit-quill
+openpyxl
