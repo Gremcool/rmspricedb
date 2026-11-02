@@ -13,6 +13,7 @@ import json
 import os
 import shutil
 import sqlite3
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -72,12 +73,52 @@ def init() -> None:
     conn.close()
 
 
+def _usable(path: Path) -> bool:
+    """True if SQLite can open this file, write to it and pass an integrity check."""
+    try:
+        conn = sqlite3.connect(path, timeout=5)
+        try:
+            conn.executescript(SCHEMA)
+            conn.commit()
+            return conn.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+        finally:
+            conn.close()
+    except (sqlite3.Error, OSError):
+        return False
+
+
+def _choose_location() -> None:
+    """
+    Pick where the database lives: the persistent /data volume if there is one, otherwise the app folder.
+    If that folder is read-only, or SQLite cannot use it (some synced or network drives), fall back to a
+    private copy in the system temp folder, so the app starts instead of crashing.
+    """
+    global DATA_DIR, DB_PATH
+    candidates = ([Path("/data")] if os.path.isdir("/data") else []) + [BASE_DIR, Path(tempfile.gettempdir()) / "rms_pricedb"]
+    for base in candidates:
+        try:
+            base.mkdir(parents=True, exist_ok=True)
+            target = base / "pricedb.sqlite"
+            if not target.exists() and BUNDLED_DB.exists() and BUNDLED_DB != target:
+                shutil.copy(BUNDLED_DB, target)
+        except OSError:
+            continue
+        if _usable(target):
+            DATA_DIR, DB_PATH = base, target
+            return
+        try:                                   # a damaged copy: start again from the Excel files
+            target.unlink()
+        except OSError:
+            continue
+        if _usable(target):
+            DATA_DIR, DB_PATH = base, target
+            return
+    raise RuntimeError("Could not create a usable database in any writable folder.")
+
+
 def ensure_ready() -> str | None:
     """Make sure a usable database exists. Returns a message if something needed attention."""
-    if not DB_PATH.exists() and BUNDLED_DB.exists() and BUNDLED_DB != DB_PATH:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        shutil.copy(BUNDLED_DB, DB_PATH)           # first run on a fresh persistent volume
-    init()
+    _choose_location()
     if list_datasets().empty:
         return seed_from_folder()
     return None

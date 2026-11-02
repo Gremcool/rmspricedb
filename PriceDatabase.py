@@ -33,32 +33,18 @@ header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecor
 html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] { background:#FBFBFA !important; }
 html[data-rms-theme="dark"] body, html[data-rms-theme="dark"] .stApp,
 html[data-rms-theme="dark"] [data-testid="stAppViewContainer"], html[data-rms-theme="dark"] [data-testid="stMain"] { background:#0B0B0C !important; }
-[data-testid="stMain"] { overflow:hidden !important; }
-[data-testid="stMainBlockContainer"], .block-container { padding:0 !important; max-width:100% !important; }
+[data-testid="stMainBlockContainer"], .block-container, .main .block-container { padding:0 !important; max-width:100% !important; width:100% !important; }
 [data-testid="stVerticalBlock"] { gap:0 !important; }
-[data-testid="stElementContainer"]:has(> [data-testid="stHtml"] > style) { display:none !important; }
-[data-testid="stIFrame"] { height:100vh !important; height:100dvh !important; width:100% !important; border:0 !important; display:block; }
-
+[data-testid="stElementContainer"]:has(> [data-testid="stHtml"] > style), .element-container:has(> style) { display:none !important; }
+iframe { width:100% !important; border:0 !important; display:block; height:100vh !important; height:100dvh !important; }
+/* The page's own Manage button clicks this one. It is hidden by the page; if that ever fails it stays
+   available here, just below the page. */
+.st-key-manage { padding:8px 16px; text-align:center; }
 /* the Manage dialog: keep Streamlit's default red out of it */
 [data-testid="stBaseButton-primary"] { background:#151514 !important; border-color:#151514 !important; color:#fff !important; }
 [data-testid="stBaseButton-primary"] p { color:#fff !important; }
 button[role="tab"][aria-selected="true"], button[role="tab"][aria-selected="true"] p { color:#151514 !important; }
 [data-baseweb="tab-highlight"] { background:#151514 !important; }
-[data-testid="stDialog"] [role="dialog"] { border-radius:16px; }
-
-.st-key-manage { position:fixed; top:10px; right:20px; z-index:100; width:auto !important; }
-.st-key-manage button { height:36px; min-height:36px; padding:0 13px; border-radius:10px; font-size:13.5px; font-weight:550;
-  background:#fff; color:#151514; border:1px solid #E9E9E5; }
-html[data-rms-drawer] .st-key-manage { display:none !important; }
-.st-key-manage button:hover { background:#F4F4F1; border-color:#D9D9D3; color:#151514; }
-.st-key-manage button p { font-size:13.5px; font-weight:550; }
-html[data-rms-theme="dark"] .st-key-manage button { background:#131314; color:#F1F1EF; border-color:#232326; }
-html[data-rms-theme="dark"] .st-key-manage button:hover { background:#18181A; border-color:#34343A; color:#F1F1EF; }
-@media (max-width: 640px) {
-  .st-key-manage { right:12px; }
-  .st-key-manage button { padding:0 10px; }
-  .st-key-manage button p { display:none; }
-}
 </style>
 """)
 
@@ -70,18 +56,31 @@ def build_page(version: str, ui_mtime: float) -> str:
     return UI_FILE.read_text(encoding="utf-8").replace("__DATA__", database.build_payload())
 
 
-seed_note = database.ensure_ready()
+try:
+    seed_note = database.ensure_ready()
+except Exception as exc:                          # never leave the page spinning: say what happened
+    st.error(f"The price database could not be opened: {exc}")
+    st.stop()
 
 
 # ───────────────────────────────────────────────────────────── admin
 def admin_password() -> str | None:
-    """Optional. Set `admin_password` in .streamlit/secrets.toml, or the RMS_ADMIN_PASSWORD environment variable."""
-    try:
-        if "admin_password" in st.secrets:
-            return str(st.secrets["admin_password"])
-    except Exception:
-        pass
-    return os.environ.get("RMS_ADMIN_PASSWORD") or None
+    """
+    Optional. Set the RMS_ADMIN_PASSWORD environment variable, or `admin_password` in .streamlit/secrets.toml
+    (or in the Secrets settings on Streamlit Community Cloud). Streamlit is only asked for secrets when a
+    secrets file exists, because older versions print a red error when it does not.
+    """
+    env = os.environ.get("RMS_ADMIN_PASSWORD")
+    if env:
+        return env
+    for f in (Path.home() / ".streamlit" / "secrets.toml", Path.cwd() / ".streamlit" / "secrets.toml"):
+        if f.exists():
+            try:
+                if "admin_password" in st.secrets:
+                    return str(st.secrets["admin_password"])
+            except Exception:
+                pass
+    return None
 
 
 def refresh_everything():
@@ -120,8 +119,12 @@ def manage_dialog():
                 "Published in": lists["native_currency"], "File": lists["source_file"],
                 "Added": lists["imported_at"].str[:10],
             })
-            st.dataframe(table, hide_index=True, width="stretch",
-                         column_config={"Prices": st.column_config.NumberColumn(format="%d")})
+            try:
+                st.dataframe(table, hide_index=True, width="stretch",
+                             column_config={"Prices": st.column_config.NumberColumn(format="%d")})
+            except Exception:                      # older Streamlit has no width="stretch"
+                st.dataframe(table, hide_index=True, use_container_width=True,
+                             column_config={"Prices": st.column_config.NumberColumn(format="%d")})
             hidden = int(lists["unpriced"].sum() + lists["duplicates"].sum())
             if hidden:
                 st.caption(f"{int(lists['unpriced'].sum()):,} rows without a price and "
@@ -177,9 +180,9 @@ def manage_dialog():
             st.caption("Changes are saved on the server's disk. Free hosts such as Streamlit Community Cloud reset that "
                        "disk when the app restarts, so download the database and commit it to GitHub as "
                        "pricedb.sqlite to keep your changes.")
-        st.download_button("Download database (pricedb.sqlite)", data=database.db_bytes, file_name="pricedb.sqlite",
+        st.download_button("Download database (pricedb.sqlite)", data=database.db_bytes(), file_name="pricedb.sqlite",
                            mime="application/octet-stream")
-        st.download_button("Download all prices (CSV)", data=database.export_csv, file_name="rms_all_prices.csv",
+        st.download_button("Download all prices (CSV)", data=database.export_csv(), file_name="rms_all_prices.csv",
                            mime="text/csv")
         if not pwd:
             st.caption("Tip: set an admin password (see README) so only you can change the data.")
@@ -189,11 +192,15 @@ def manage_dialog():
 if seed_note:
     st.warning(f"Some files in datasets/ could not be imported: {seed_note}")
 
-page_html = build_page(database.version(), UI_FILE.stat().st_mtime)
+try:
+    page_html = build_page(database.version(), UI_FILE.stat().st_mtime)
+except Exception as exc:
+    st.error(f"The page could not be built: {exc}")
+    st.stop()
 if hasattr(st, "iframe"):                       # current Streamlit
     st.iframe(page_html, height=800)
 else:                                           # older Streamlit (st.components.v1.html is deprecated in new versions)
     components.html(page_html, height=800, scrolling=False)
 
-if st.button("Manage", icon=":material/settings:", key="manage", help="Add, update or remove price lists"):
+if st.button("Manage", key="manage", help="Add, update or remove price lists"):
     manage_dialog()

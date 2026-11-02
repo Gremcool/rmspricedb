@@ -49,6 +49,16 @@ Every list is shown in USD and RWF at a flat **1 USD = 1,300 RWF**, the rate you
 RHIA is published in RWF only, so its USD is derived at the same rate. To change the rate, edit
 `FX_RWF_PER_USD` in `importer.py` and re-import the lists.
 
+## If something looks wrong
+- **The page says "Loading prices…" and stays there:** the page itself needs nothing from the internet, so this means
+  its data did not arrive. Reload once; if it persists, the message that replaces it (or a red box above the page)
+  names the problem. Please send me that message.
+- **"The price database could not be opened":** the app folder may be read-only or on a synced drive (Google Drive,
+  OneDrive). The app then tries a private copy in the system temp folder automatically. Keep the project in a normal
+  local folder when running it on your computer.
+- **Manage does nothing:** scroll to the bottom of the page; a plain Manage button is left there as a backup.
+- Tested on Streamlit 1.40 and 1.66.
+
 ## Uploading to GitHub
 Upload the **contents** of this folder, including `pricedb.sqlite`, `datasets/`, `ui/` and `.streamlit/`.
 (`.streamlit` starts with a dot and is easy to miss; the app also works without it.)
