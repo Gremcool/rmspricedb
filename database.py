@@ -57,6 +57,10 @@ CREATE TABLE IF NOT EXISTS prices (
     rwf REAL
 );
 CREATE INDEX IF NOT EXISTS idx_prices_dataset ON prices(dataset_id);
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
 """
 
 
@@ -124,6 +128,47 @@ def ensure_ready() -> str | None:
     return None
 
 
+# ───────────────────────────────────────────────────────────── settings and currency
+def get_setting(key: str, default=None):
+    conn = connect()
+    try:
+        row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+        return row[0] if row else default
+    except sqlite3.Error:
+        return default
+    finally:
+        conn.close()
+
+
+def set_setting(key: str, value: str) -> None:
+    conn = connect()
+    try:
+        conn.execute("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, str(value)))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+class Store:
+    """What fx.resolve() uses to remember the last good rate."""
+    get = staticmethod(get_setting)
+    set = staticmethod(set_setting)
+
+
+def converted(px: pd.DataFrame, ds: pd.DataFrame, rate: float) -> tuple[pd.Series, pd.Series]:
+    """
+    (usd, rwf) at the given rate. Each list keeps the price it was published in and only the OTHER currency is
+    converted: a USD list shows its USD price as published and RWF = USD x rate; an RWF list (RHIA) shows its RWF
+    price as published and USD = RWF / rate. The USD and RWF stored in the database were made at a fixed 1,300 when
+    the file was imported, so they are not used for the converted side.
+    """
+    native = px["dataset_id"].map(dict(zip(ds["id"], ds["native_currency"]))).fillna("USD")
+    is_usd = native == "USD"
+    usd = px["usd"].where(is_usd, px["rwf"] / rate)
+    rwf = px["rwf"].where(~is_usd, px["usd"] * rate)
+    return usd, rwf
+
+
 # ───────────────────────────────────────────────────────────── reading
 def list_datasets() -> pd.DataFrame:
     conn = connect()
@@ -146,7 +191,7 @@ def version() -> str:
         conn.close()
 
 
-def build_payload(max_rows: int | None = None) -> str:
+def build_payload(rate: float | None = None, fx_info: dict | None = None) -> str:
     """
     Everything the browser needs, as compact JSON: column-wise, with repeated text stored once.
     Same idea as the Sales dashboard: the page searches and compares locally, so it never waits on a rerun.
@@ -159,6 +204,8 @@ def build_payload(max_rows: int | None = None) -> str:
     finally:
         conn.close()
 
+    rate = float(rate or importer.FX_RWF_PER_USD)
+    usd, rwf = converted(px, ds, rate)
     idx = {int(d): i for i, d in enumerate(ds["id"])}
     counts = px.groupby("dataset_id").size().to_dict()
     lists = [dict(id=int(r.id), label=r.label, period=r.period or "", kind=r.kind or "",
@@ -172,24 +219,27 @@ def build_payload(max_rows: int | None = None) -> str:
         cols[name] = codes.tolist()
     cols["l"] = [idx[int(x)] for x in px["dataset_id"]]
     cols["p"] = px["product"].tolist()
-    cols["u"] = [round(float(v), 6) if v == v else None for v in px["usd"]]
-    cols["r"] = [round(float(v), 2) if v == v else None for v in px["rwf"]]
-    out = json.dumps({"fx": importer.FX_RWF_PER_USD, "lists": lists, "dict": dicts, "n": len(px), "cols": cols},
+    cols["u"] = [round(float(v), 6) if v == v else None for v in usd]
+    cols["r"] = [round(float(v), 2) if v == v else None for v in rwf]
+    out = json.dumps({"fx": rate, "fxinfo": fx_info or {}, "lists": lists, "dict": dicts, "n": len(px), "cols": cols},
                      separators=(",", ":"))
     return out.replace("</", "<\\/")                        # safe to embed in a script tag
 
 
-def export_csv(label: str | None = None) -> bytes:
+def export_csv(label: str | None = None, rate: float | None = None) -> bytes:
+    rate = float(rate or importer.FX_RWF_PER_USD)
     conn = connect()
     try:
-        q = ("SELECT d.label AS List, p.product AS Product, p.detail AS Details, p.pack AS Pack, "
-             "p.category AS Category, p.note AS Note, p.usd AS USD, p.rwf AS RWF "
-             "FROM prices p JOIN datasets d ON d.id = p.dataset_id")
-        df = pd.read_sql(q + (" WHERE d.label = ?" if label else "") + " ORDER BY d.id, p.id",
-                         conn, params=[label] if label else None)
+        ds = pd.read_sql("SELECT * FROM datasets ORDER BY id", conn)
+        px = pd.read_sql("SELECT * FROM prices ORDER BY dataset_id, id", conn)
     finally:
         conn.close()
-    return df.to_csv(index=False).encode("utf-8-sig")
+    px["usd"], px["rwf"] = converted(px, ds, rate)
+    px = px.merge(ds[["id", "label"]].rename(columns={"id": "dataset_id", "label": "List"}), on="dataset_id")
+    if label:
+        px = px[px["List"] == label]
+    out = px.rename(columns={"product": "Product", "detail": "Details", "pack": "Pack", "category": "Category", "note": "Note", "usd": "USD", "rwf": "RWF"})
+    return out[["List", "Product", "Details", "Pack", "Category", "Note", "USD", "RWF"]].to_csv(index=False).encode("utf-8-sig")
 
 
 def db_bytes() -> bytes:

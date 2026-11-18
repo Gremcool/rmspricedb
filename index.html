@@ -8,14 +8,14 @@
 :root{
   --bg:#FBFBFA; --surface:#FFFFFF; --hover:#F4F4F1; --line:#E9E9E5; --line2:#D9D9D3;
   --text:#151514; --muted:#6D6D67; --faint:#A0A09A;
-  --good:#0E7A55; --good-bg:#E7F4EC; --shadow:0 1px 2px rgba(20,20,18,.04), 0 8px 30px rgba(20,20,18,.06);
+  --good:#0E7A55; --good-bg:#E7F4EC; --warn:#A8560B; --shadow:0 1px 2px rgba(20,20,18,.04), 0 8px 30px rgba(20,20,18,.06);
   --font:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'SF Pro Text','Helvetica Neue',Roboto,Arial,sans-serif;
   --l0:#C26A00; --l1:#2563EB; --l2:#7C3AED; --l3:#DC4A2B; --l4:#D1327F; --l5:#0E8FA3; --l6:#4D7C0F; --l7:#8A6D3B;
 }
 html[data-theme="dark"]{
   --bg:#0B0B0C; --surface:#131314; --hover:#18181A; --line:#232326; --line2:#34343A;
   --text:#F1F1EF; --muted:#9A9AA2; --faint:#62626A;
-  --good:#4ADE9A; --good-bg:#0F2419; --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 40px rgba(0,0,0,.45);
+  --good:#4ADE9A; --good-bg:#0F2419; --warn:#F5B04C; --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 40px rgba(0,0,0,.45);
   --l0:#F5B04C; --l1:#6EA2FF; --l2:#A78BFA; --l3:#FB8C6A; --l4:#F472B6; --l5:#4CC7DA; --l6:#9BD14B; --l7:#D2B07A;
 }
 *{ box-sizing:border-box; }
@@ -27,63 +27,106 @@ button{ cursor:pointer; }
 :focus-visible{ outline:2px solid var(--text); outline-offset:2px; border-radius:6px; }
 
 /* ── top bar ── */
-.top{ position:sticky; top:0; z-index:20; height:56px; display:flex; align-items:center; gap:10px; padding:0 20px;
+.top{ position:sticky; top:0; z-index:40; height:64px; display:flex; align-items:center; gap:10px; padding:0 20px;
   background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:saturate(1.4) blur(12px); -webkit-backdrop-filter:saturate(1.4) blur(12px); }
 .brand{ white-space:nowrap; font-weight:650; font-size:16px; letter-spacing:-.02em; display:flex; align-items:center; gap:9px; margin-right:auto; }
-.brand i{ width:18px; height:18px; border-radius:6px; background:var(--text); display:inline-block; position:relative; }
-.brand i::after{ content:""; position:absolute; inset:5px; border-radius:50%; background:var(--bg); }
+.logo{ display:block; flex:none; height:38px; aspect-ratio:328 / 118; background:url("data:image/png;base64,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") no-repeat left center / contain; }
+html[data-theme="dark"] .logo{ background-image:url("data:image/png;base64,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"); }
+.curbox{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+.rate{ font-size:13.5px; font-weight:600; color:var(--muted); line-height:1.15; white-space:nowrap; cursor:help; }
 .seg{ display:inline-flex; padding:2px; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
-.seg button{ border:0; background:transparent; height:28px; padding:0 11px; border-radius:8px; color:var(--muted); font-size:13px; font-weight:550; }
+.seg button{ border:0; background:transparent; height:28px; padding:0 11px; border-radius:8px; color:var(--muted); font-size:13px; font-weight:550; white-space:nowrap; }
 .seg button[aria-pressed="true"]{ background:var(--text); color:var(--bg); }
 .icon{ width:36px; height:36px; display:grid; place-items:center; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--text); }
 .icon:hover,.btn:hover{ border-color:var(--line2); background:var(--hover); }
-.btn{ height:36px; padding:0 13px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font-size:13.5px; font-weight:550;
-  display:inline-flex; align-items:center; gap:8px; }
+.btn{ height:36px; padding:0 13px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font-size:13.5px; font-weight:550; display:inline-flex; align-items:center; gap:8px; }
 .count{ min-width:20px; height:20px; padding:0 6px; border-radius:99px; background:var(--text); color:var(--bg); font-size:12px; font-weight:600; display:inline-grid; place-items:center; }
 .count[data-n="0"]{ background:var(--line2); color:var(--muted); }
 
-/* ── search ── */
-main{ width:100%; max-width:880px; margin:0 auto; padding:0 20px 56px; flex:1 0 auto; }
-.hero{ padding-top:15vh; transition:padding .35s cubic-bezier(.2,.7,.2,1); }
-main.active .hero{ padding-top:14px; }
-h1{ margin:0 0 22px; font-size:42px; line-height:1.08; font-weight:600; letter-spacing:-.035em; text-wrap:balance; max-width:16ch; }
-main.active h1,main.active .hint,main.active .legend{ display:none; }
+/* ── page + hero ── */
+main{ width:100%; max-width:880px; margin:0 auto; padding:0 20px 56px; flex:1 0 auto; transition:max-width .25s; }
+main.active.wide{ max-width:1180px; }
+.hero{ padding-top:6vh; }
+main.active .hero{ padding-top:6px; position:sticky; top:64px; z-index:30; background:var(--bg); padding-bottom:10px; }
+h1{ margin:0 0 10px; font-size:44px; line-height:1.08; font-weight:650; letter-spacing:-.035em; }
+.lead{ margin:0 0 24px; color:var(--muted); font-size:16.5px; max-width:52ch; }
+main.active .extra{ display:none; }
+.sbox{ position:relative; }
 .search{ display:flex; align-items:center; gap:12px; height:58px; padding:0 18px; border:1px solid var(--line2); border-radius:16px;
-  background:var(--surface); box-shadow:var(--shadow); transition:border-color .15s, box-shadow .15s; }
+  background:var(--surface); box-shadow:var(--shadow); transition:border-color .15s; }
 .search:focus-within{ border-color:var(--text); }
-.search svg{ flex:none; color:var(--muted); }
-.search input{ flex:1; min-width:0; border:0; outline:0; background:transparent; font-size:18px; letter-spacing:-.01em; }
-.search input::placeholder{ color:var(--faint); }
+.search > svg{ flex:none; color:var(--muted); }
+.field{ position:relative; flex:1; min-width:0; height:100%; }
+.field input,.field .ghost{ position:absolute; inset:0; width:100%; height:100%; border:0; outline:0; background:transparent; padding:0; margin:0;
+  font:inherit; font-size:18px; letter-spacing:-.01em; line-height:58px; }
+.field .ghost{ pointer-events:none; white-space:pre; overflow:hidden; color:transparent; }
+.field .ghost b{ font-weight:inherit; color:var(--faint); }
+.field input{ z-index:1; }
+.field input::placeholder{ color:var(--faint); }
 .search kbd{ font:inherit; font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 7px; }
-.search .x{ display:none; border:0; background:var(--hover); width:26px; height:26px; border-radius:50%; color:var(--muted); }
+.search .tabkey{ display:none; font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 7px; white-space:nowrap; }
+.search .tabkey.on{ display:inline-block; }
+.search .x{ display:none; border:0; background:var(--hover); width:26px; height:26px; border-radius:50%; color:var(--muted); flex:none; }
 main.active .search kbd{ display:none; } main.active .search .x{ display:block; }
-.hint{ margin:16px 2px 0; color:var(--muted); font-size:14px; }
-.hint button{ border:0; background:none; padding:0; margin-left:14px; color:var(--text); text-decoration:underline; text-decoration-color:var(--line2); text-underline-offset:4px; font-size:14px; }
-.hint button:hover{ text-decoration-color:var(--text); }
-.legend{ margin-top:46px; display:flex; flex-wrap:wrap; gap:8px 20px; color:var(--muted); font-size:13px; }
-.legend span{ display:inline-flex; align-items:center; gap:7px; }
-.legend small{ color:var(--faint); font-size:12px; }
 
-/* ── results ── */
+/* ── predictive dropdown ── */
+.sugg{ position:absolute; top:calc(100% + 8px); left:0; right:0; background:var(--surface); border:1px solid var(--line2); border-radius:14px;
+  box-shadow:var(--shadow); padding:6px; z-index:50; max-height:min(60vh,420px); overflow:auto; }
+.sugg[hidden]{ display:none; }
+.sugg .lab{ display:flex; align-items:center; justify-content:space-between; padding:8px 10px 4px; font-size:12px; color:var(--faint); font-weight:600; }
+.sugg .lab button{ border:0; background:none; font-size:12px; color:var(--muted); padding:0; text-decoration:underline; }
+.opt{ display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:9px; cursor:pointer; }
+.opt[aria-selected="true"],.opt:hover{ background:var(--hover); }
+.opt svg{ flex:none; color:var(--faint); }
+.opt .t{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px; }
+.opt .t b{ font-weight:650; }
+.opt .n{ flex:none; font-size:12.5px; color:var(--muted); }
+.opt .go{ flex:none; font-size:12px; color:var(--faint); }
+
+.chips{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:16px; }
+.chips > span{ color:var(--muted); font-size:13.5px; margin-right:4px; }
+.chip2{ border:1px solid var(--line2); background:var(--surface); color:var(--text); border-radius:99px; height:32px; padding:0 13px; font-size:13.5px; }
+.chip2:hover{ border-color:var(--text); }
+.steps{ list-style:none; margin:34px 0 0; padding:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.steps li{ display:flex; gap:12px; align-items:stretch; }
+.steps li > div{ display:flex; flex-direction:column; flex:1; min-width:0; }
+.steps b{ flex:none; align-self:flex-start; width:24px; height:24px; border-radius:50%; border:1px solid var(--line2); display:grid; place-items:center; font-size:12.5px; font-weight:600; color:var(--text); }
+.steps strong{ display:block; font-size:14.5px; font-weight:600; letter-spacing:-.005em; }
+.steps small{ display:block; margin-top:2px; margin-bottom:7px; font-size:13px; color:var(--muted); line-height:1.4; }
+.legend{ margin-top:38px; padding-top:20px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:8px 8px; color:var(--muted); font-size:13px; }
+.legend > b{ flex-basis:100%; font-weight:600; font-size:12px; color:var(--faint); }
+.legend .tot{ flex-basis:100%; margin-top:6px; color:var(--faint); }
+
+/* ── results chrome ── */
 .dot{ width:8px; height:8px; border-radius:50%; background:var(--c); flex:none; display:inline-block; }
-.tabs{ display:flex; gap:22px; overflow-x:auto; margin-top:18px; border-bottom:1px solid var(--line); scrollbar-width:none; }
-.tabs::-webkit-scrollbar{ display:none; }
-.tabs button{ flex:none; border:0; background:none; padding:10px 0 11px; color:var(--muted); font-size:14px; font-weight:500; border-bottom:2px solid transparent; margin-bottom:-1px;
-  display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
-.tabs button small{ font-size:12px; color:var(--faint); }
-.tabs button[aria-selected="true"]{ color:var(--text); border-bottom-color:var(--text); }
-.rhead{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 2px 6px; color:var(--muted); font-size:13.5px; }
-.rhead .sp{ margin-left:auto; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.viewbar{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:6px 0 4px; }
+.seg2{ display:inline-flex; padding:3px; border:1px solid var(--line); border-radius:11px; background:var(--surface); }
+.seg2 button{ border:0; background:transparent; height:32px; padding:0 15px; border-radius:8px; color:var(--muted); font-size:14px; font-weight:550; display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
+.seg2 button[aria-pressed="true"]{ background:var(--text); color:var(--bg); }
+.viewbar .sum{ color:var(--muted); font-size:13.5px; }
+.viewbar .sp{ margin-left:auto; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
 .link{ border:0; background:none; padding:0; color:var(--text); font-size:13.5px; font-weight:550; text-decoration:underline; text-decoration-color:var(--line2); text-underline-offset:4px; }
 .link:hover{ text-decoration-color:var(--text); }
-.rhead select{ border:0; background:none; font-size:13.5px; color:var(--text); font-weight:550; padding:0; cursor:pointer; }
+.viewbar select{ border:0; background:none; font-size:13.5px; color:var(--text); font-weight:550; padding:0; cursor:pointer; }
+.check{ display:inline-flex; align-items:center; gap:8px; font-size:13.5px; color:var(--text); font-weight:500; cursor:pointer; user-select:none; }
+.check input{ width:16px; height:16px; accent-color:var(--text); margin:0; }
+.tabs{ display:flex; gap:22px; overflow-x:auto; margin-top:8px; border-bottom:1px solid var(--line); scrollbar-width:none; }
+.tabs::-webkit-scrollbar{ display:none; }
+.tabs button{ flex:none; border:0; background:none; padding:9px 0 10px; color:var(--muted); font-size:14px; font-weight:500; border-bottom:2px solid transparent; margin-bottom:-1px; display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
+.tabs button small{ font-size:12px; color:var(--faint); }
+.tabs button[aria-selected="true"]{ color:var(--text); border-bottom-color:var(--text); }
+[hidden]{ display:none !important; }
+
 ul#rows{ list-style:none; margin:0; padding:0; }
 .row{ display:grid; grid-template-columns:minmax(0,1fr) auto 36px; gap:18px; align-items:center; padding:15px 4px; border-bottom:1px solid var(--line); }
 .row:hover{ background:linear-gradient(90deg, transparent, var(--hover) 40px, var(--hover) calc(100% - 40px), transparent); }
 .name{ font-size:15.5px; font-weight:500; line-height:1.35; overflow-wrap:anywhere; }
 .name mark{ background:none; color:inherit; box-shadow:inset 0 -2px 0 color-mix(in srgb, var(--text) 22%, transparent); }
 .sub{ display:flex; flex-wrap:wrap; align-items:center; gap:3px 14px; margin-top:5px; font-size:13px; color:var(--muted); }
-.chip{ display:inline-flex; align-items:center; gap:7px; color:var(--text); font-weight:500; }
+.chip{ display:inline-flex; align-items:center; gap:7px; padding:2px 10px 2px 8px; border-radius:7px; font-weight:600; font-size:12.5px; line-height:1.5; white-space:nowrap;
+  color:var(--text); background:var(--hover);
+  color:color-mix(in srgb, var(--c) 68%, var(--text)); background:color-mix(in srgb, var(--c) 15%, transparent); }
+.chip small{ color:inherit; opacity:.7; font-size:11.5px; font-weight:500; }
 .price{ text-align:right; font-size:16px; font-weight:600; letter-spacing:-.01em; white-space:nowrap; }
 .price small{ display:block; font-size:12.5px; font-weight:400; color:var(--muted); letter-spacing:0; margin-top:1px; }
 .price.low{ color:var(--good); }
@@ -91,21 +134,52 @@ ul#rows{ list-style:none; margin:0; padding:0; }
 .add{ width:34px; height:34px; border-radius:50%; border:1px solid var(--line2); background:var(--surface); display:grid; place-items:center; color:var(--text); transition:background .12s, color .12s, border-color .12s; }
 .add:hover{ border-color:var(--text); }
 .add[aria-pressed="true"]{ background:var(--text); color:var(--bg); border-color:var(--text); }
-.note{ padding:28px 0 8px; color:var(--muted); font-size:13px; }
-.empty{ padding:56px 0; text-align:center; color:var(--muted); }
+.note{ padding:26px 0 8px; color:var(--muted); font-size:13px; line-height:1.55; }
+.empty{ padding:56px 0; text-align:center; color:var(--muted); list-style:none; }
 .empty b{ display:block; font-size:18px; font-weight:600; color:var(--text); margin-bottom:6px; letter-spacing:-.01em; }
 .empty button{ margin:14px 6px 0; }
 
-/* ── compare drawer ── */
-#scrim{ position:fixed; inset:0; background:rgba(10,10,10,.32); opacity:0; pointer-events:none; transition:opacity .2s; z-index:40; }
-#drawer{ position:fixed; top:0; right:0; bottom:0; width:min(480px,100vw); background:var(--bg); border-left:1px solid var(--line); z-index:50;
+/* ── compare lists (matrix) ── */
+.mx{ overflow-x:auto; margin-top:10px; padding-bottom:6px; }
+.mhead,.mr{ display:grid; grid-template-columns:minmax(250px,1.7fr) repeat(var(--cols),minmax(112px,1fr)); min-width:calc(250px + var(--cols) * 112px); }
+.mhead{ position:sticky; top:0; }
+.mhead > div{ padding:10px 10px 10px; font-size:12.5px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:7px; border-bottom:1px solid var(--text); }
+.mhead > div:first-child{ padding-left:4px; }
+.mhead > div:not(:first-child){ display:flex; justify-content:flex-end; align-items:center; }
+.mhead .chip{ white-space:normal; line-height:1.25; text-align:left; font-size:12px; }
+.mhead small{ color:var(--faint); font-weight:500; }
+.mrow{ border-bottom:1px solid var(--line); }
+.mr{ width:100%; border:0; background:none; text-align:left; align-items:stretch; padding:0; }
+.mr:hover{ background:var(--hover); }
+.mc0{ padding:13px 10px 13px 4px; min-width:0; background:inherit; position:sticky; left:0; }
+.mc0 .gl{ font-size:15px; font-weight:550; line-height:1.3; display:flex; gap:8px; align-items:baseline; }
+.mc0 .gl i{ font-style:normal; color:var(--faint); font-size:12px; transition:transform .15s; display:inline-block; }
+.mrow.open .mc0 .gl i{ transform:rotate(90deg); }
+.mc0 .gs{ font-size:12.5px; color:var(--muted); margin-top:3px; padding-left:16px; }
+.mcell{ padding:11px 10px; text-align:right; display:flex; flex-direction:column; justify-content:center; align-items:flex-end; font-size:15px; font-weight:600; }
+.mcell small{ font-size:12px; font-weight:500; color:var(--muted); display:flex; gap:7px; margin-top:2px; }
+.mcell small .warn{ color:var(--warn); font-weight:650; cursor:help; }
+.mcell .ln{ display:none; }
+.mcell.none{ color:var(--line2); font-weight:400; }
+.mcell.best b{ color:var(--good); background:var(--good-bg); padding:1px 8px; border-radius:7px; }
+.md{ padding:4px 4px 14px 16px; }
+.mdi{ display:grid; grid-template-columns:minmax(0,1fr) auto 34px; gap:14px; align-items:center; padding:9px 0; border-top:1px dashed var(--line); }
+.mdi:first-child{ border-top:0; }
+.mdi .nm{ font-size:14.5px; font-weight:500; overflow-wrap:anywhere; }
+.mdi .sub{ margin-top:3px; }
+.mdi .price{ font-size:15px; }
+.mnote{ font-size:12.5px; color:var(--muted); padding:16px 0 4px; line-height:1.55; }
+
+/* ── shortlist drawer ── */
+#scrim{ position:fixed; inset:0; background:rgba(10,10,10,.32); opacity:0; pointer-events:none; transition:opacity .2s; z-index:60; }
+#drawer{ position:fixed; top:0; right:0; bottom:0; width:min(480px,100vw); background:var(--bg); border-left:1px solid var(--line); z-index:70;
   transform:translateX(102%); transition:transform .28s cubic-bezier(.2,.7,.2,1); display:flex; flex-direction:column; box-shadow:var(--shadow); }
 body.cmp #drawer{ transform:none; } body.cmp #scrim{ opacity:1; pointer-events:auto; }
 .dh{ display:flex; align-items:center; gap:10px; padding:16px 20px; border-bottom:1px solid var(--line); }
 .dh h2{ margin:0; font-size:17px; font-weight:600; letter-spacing:-.015em; margin-right:auto; }
 .db{ flex:1; overflow:auto; padding:6px 20px 20px; }
-.sum{ margin:14px 0 6px; font-size:14px; color:var(--muted); line-height:1.55; }
-.sum b{ color:var(--text); font-weight:600; }
+.dsum{ margin:14px 0 6px; font-size:14px; color:var(--muted); line-height:1.55; }
+.dsum b{ color:var(--text); font-weight:600; }
 .rung{ display:grid; grid-template-columns:minmax(0,1fr) auto 30px; gap:6px 14px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); }
 .rung .name{ font-size:14.5px; }
 .rung .bar{ grid-column:1; grid-row:2; height:4px; border-radius:9px; background:var(--line); overflow:hidden; }
@@ -119,64 +193,261 @@ body.cmp #drawer{ transform:none; } body.cmp #scrim{ opacity:1; pointer-events:a
 .df .btn{ flex:1; justify-content:center; }
 .df .btn.primary{ background:var(--text); color:var(--bg); border-color:var(--text); }
 .caveat{ font-size:12.5px; color:var(--faint); margin-top:14px; line-height:1.5; }
-
 #toast{ position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px); background:var(--text); color:var(--bg); padding:10px 16px; border-radius:12px;
-  font-size:13.5px; font-weight:500; opacity:0; pointer-events:none; transition:all .25s; z-index:60; max-width:90vw; }
+  font-size:13.5px; font-weight:500; opacity:0; pointer-events:none; transition:all .25s; z-index:80; max-width:90vw; }
 #toast.on{ opacity:1; transform:translate(-50%,0); }
 
-@media (max-width:640px){
-  .top{ padding:0 12px; gap:8px; } h1{ font-size:32px; }
-  main{ padding:0 14px 70px; } .hero{ padding-top:9vh; } .search{ height:52px; } .search input{ font-size:16px; }
-  .row{ grid-template-columns:minmax(0,1fr) auto 34px; gap:12px; } .btn .lbl{ display:none; }
-  .rhead .sp{ margin-left:0; width:100%; justify-content:space-between; }
-}
-@media (max-width:430px){ .brand span{ display:none; } }
 /* ── footer: the quiet way in to the admin panel ── */
-.foot{ width:100%; max-width:880px; margin:0 auto; padding:16px 20px 22px; border-top:1px solid var(--line); display:flex; align-items:center; gap:14px;
-  flex-wrap:wrap; color:var(--faint); font-size:12.5px; }
+.foot{ width:100%; max-width:880px; margin:0 auto; padding:16px 20px 22px; border-top:1px solid var(--line); display:flex; align-items:center; gap:14px; flex-wrap:wrap; color:var(--faint); font-size:12.5px; }
 .foot .adm{ margin-left:auto; border:0; background:none; padding:4px 6px; border-radius:6px; font-size:12.5px; color:var(--faint); opacity:.55; }
 .foot .adm:hover,.foot .adm:focus-visible{ opacity:1; color:var(--text); }
+
+#tour .tour{ width:min(1040px,100%); background:var(--bg); border:1px solid var(--line); border-radius:22px; box-shadow:var(--shadow); display:grid; grid-template-columns:300px minmax(0,1fr); overflow:hidden; }
+#tour .side{ padding:30px 26px 22px; border-right:1px solid var(--line); display:flex; flex-direction:column; }
+#tour .side h2{ margin:0; font-size:21px; font-weight:650; letter-spacing:-.02em; }
+#tour .side .ssub{ margin:6px 0 22px; color:var(--muted); font-size:14px; }
+#tour .side ol{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+#tour .step{ display:flex; gap:12px; align-items:flex-start; width:100%; text-align:left; border:1px solid transparent; background:none; padding:12px 12px; border-radius:14px; transition:background .2s, border-color .2s; }
+#tour .step:hover{ background:var(--hover); }
+#tour .step b{ flex:none; width:26px; height:26px; border-radius:50%; border:1px solid var(--line2); display:grid; place-items:center; font-size:13px; font-weight:600; color:var(--muted); transition:all .2s; }
+#tour .step strong{ display:block; font-size:15px; font-weight:600; letter-spacing:-.005em; }
+#tour .step small{ display:block; margin-top:2px; color:var(--muted); font-size:13px; line-height:1.4; }
+#tour .step[aria-current="step"]{ background:var(--surface); border-color:var(--line2); }
+#tour .step[aria-current="step"] b{ background:var(--text); color:var(--bg); border-color:var(--text); }
+#tour .step.done b{ background:var(--good-bg); border-color:transparent; color:var(--good); }
+#tour .side .sfoot{ margin-top:auto; padding-top:22px; display:flex; align-items:center; justify-content:space-between; }
+#tour .link{ border:0; background:none; padding:0; color:var(--muted); font-size:13.5px; text-decoration:underline; text-decoration-color:var(--line2); text-underline-offset:4px; }
+#tour .link:hover{ color:var(--text); }
+#tour .icon{ width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+#tour .icon:hover{ border-color:var(--line2); }
+#tour .main{ padding:22px 26px 20px; display:flex; flex-direction:column; min-width:0; }
+#tour .stage{ position:relative; width:100%; aspect-ratio:700 / 430; border:1px solid var(--line2); border-radius:16px; overflow:hidden; background:var(--bg); box-shadow:0 10px 30px rgba(20,20,18,.06); }
+#tour .screen{ position:absolute; left:0; top:0; width:700px; height:430px; transform-origin:0 0; transform:scale(var(--s,1)); background:var(--bg); }
+#tour .cap{ padding:18px 4px 4px; min-height:92px; }
+#tour .cap .n{ font-size:12.5px; font-weight:600; color:var(--faint); }
+#tour .cap h3{ margin:2px 0 4px; font-size:19px; font-weight:650; letter-spacing:-.015em; }
+#tour .cap p{ margin:0; color:var(--muted); font-size:14.5px; max-width:62ch; }
+#tour .nav{ margin-top:auto; padding-top:14px; display:flex; align-items:center; gap:12px; }
+#tour .dots{ display:flex; gap:8px; margin:0 auto; }
+#tour .dots button{ width:8px; height:8px; padding:0; border-radius:99px; border:0; background:var(--line2); transition:all .25s; }
+#tour .dots button[aria-current="step"]{ width:26px; background:var(--text); }
+#tour .btn{ height:40px; padding:0 18px; border-radius:11px; border:1px solid var(--line2); background:var(--surface); font-size:14.5px; font-weight:600; }
+#tour .btn:hover{ border-color:var(--text); }
+#tour .btn.primary{ background:var(--text); color:var(--bg); border-color:var(--text); }
+#tour .btn[disabled]{ opacity:.35; pointer-events:none; }
+#tour .m-top{ height:44px; display:flex; align-items:center; gap:8px; padding:0 18px; }
+#tour .m-brand{ font-weight:650; font-size:14px; display:flex; align-items:center; gap:8px; margin-right:auto; }
+#tour .m-brand i{ width:15px; height:15px; border-radius:5px; background:var(--text); position:relative; }
+#tour .m-brand i::after{ content:""; position:absolute; inset:4px; border-radius:50%; background:var(--bg); }
+#tour .m-seg{ display:flex; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface); font-size:11.5px; font-weight:600; color:var(--muted); }
+#tour .m-seg b{ padding:4px 9px; border-radius:6px; }
+#tour .m-seg b.on{ background:var(--text); color:var(--bg); }
+#tour .m-icon{ width:28px; height:28px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+#tour .m-btn{ height:28px; padding:0 11px; border:1px solid var(--line); border-radius:8px; background:var(--surface); font-size:12px; font-weight:600; display:flex; align-items:center; gap:7px; transition:transform .12s; }
+#tour .m-btn em{ font-style:normal; min-width:17px; height:17px; border-radius:99px; background:var(--line2); color:var(--muted); font-size:10.5px; display:grid; place-items:center; padding:0 5px; transition:all .25s; }
+#tour .m-btn em.on{ background:var(--text); color:var(--bg); }
+#tour .m-main{ position:absolute; left:0; right:0; top:44px; bottom:0; padding:0 70px; }
+#tour .m-h1{ font-size:27px; font-weight:600; letter-spacing:-.03em; line-height:1.1; margin:26px 0 16px; transition:all .35s; }
+#tour .m-search{ position:relative; display:flex; align-items:center; gap:9px; height:44px; padding:0 14px; border:1px solid var(--line2); border-radius:13px; background:var(--surface); box-shadow:0 1px 2px rgba(20,20,18,.04), 0 6px 20px rgba(20,20,18,.06); transition:all .35s; }
+#tour .m-search.focus{ border-color:var(--text); }
+#tour .m-search svg{ flex:none; color:var(--muted); }
+#tour .m-field{ flex:1; font-size:15px; letter-spacing:-.01em; white-space:pre; overflow:hidden; display:flex; align-items:center; height:100%; position:relative; }
+#tour .m-field .ph{ color:var(--faint); }
+#tour .m-field .gh{ color:var(--faint); }
+#tour .m-caret{ display:inline-block; width:1.5px; height:18px; background:var(--text); margin-left:1px; animation:blink 1s steps(1) infinite; opacity:0; }
+#tour .m-search.focus .m-caret{ opacity:1; }
+@keyframes blink{ 50%{ opacity:0; } }
+#tour .m-tab{ font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 6px; opacity:0; transition:all .2s; }
+#tour .m-tab.on{ opacity:1; }
+#tour .m-tab.hit{ background:var(--text); color:var(--bg); border-color:var(--text); transform:scale(1.12); }
+#tour .m-sugg{ position:absolute; left:70px; right:70px; top:calc(44px + 26px + 31px + 16px + 44px + 6px); background:var(--surface); border:1px solid var(--line2); border-radius:12px; padding:5px; box-shadow:0 12px 34px rgba(20,20,18,.14); opacity:0; transform:translateY(-4px); pointer-events:none; transition:all .18s; z-index:4; }
+#tour .m-sugg.on{ opacity:1; transform:none; }
+#tour .m-sugg .lab{ font-size:10.5px; font-weight:600; color:var(--faint); padding:5px 8px 3px; }
+#tour .m-opt{ display:flex; justify-content:space-between; padding:7px 8px; border-radius:7px; font-size:13px; }
+#tour .m-opt:first-of-type{ background:var(--hover); }
+#tour .m-opt span{ color:var(--muted); font-size:11.5px; }
+#tour .m-chips{ display:flex; gap:7px; margin-top:12px; font-size:12px; color:var(--muted); align-items:center; transition:opacity .3s; }
+#tour .m-chips i{ font-style:normal; border:1px solid var(--line2); background:var(--surface); color:var(--text); padding:4px 10px; border-radius:99px; }
+#tour .m-view{ display:flex; align-items:center; gap:10px; margin-top:12px; opacity:0; height:0; overflow:hidden; transition:opacity .3s; }
+#tour .m-view.on{ opacity:1; height:30px; }
+#tour .m-seg2{ display:flex; padding:2px; border:1px solid var(--line); border-radius:9px; background:var(--surface); font-size:12px; font-weight:600; color:var(--muted); }
+#tour .m-seg2 b{ padding:5px 11px; border-radius:7px; transition:transform .12s; }
+#tour .m-seg2 b.on{ background:var(--text); color:var(--bg); }
+#tour .m-sum{ font-size:11.5px; color:var(--muted); }
+#tour .m-results,#tour .m-matrix{ margin-top:6px; }
+#tour .m-row{ display:grid; grid-template-columns:1fr auto 30px; gap:12px; align-items:center; padding:9px 2px; border-bottom:1px solid var(--line); opacity:0; transform:translateY(8px); transition:all .35s; }
+#tour .m-row.in{ opacity:1; transform:none; }
+#tour .m-row .nm{ font-size:13.5px; font-weight:500; }
+#tour .m-row .sb{ margin-top:2px; font-size:11px; color:var(--muted); display:flex; gap:9px; align-items:center; }
+#tour .m-row .sb em{ font-style:normal; color:var(--text); font-weight:500; display:inline-flex; align-items:center; gap:5px; }
+#tour .m-row .sb em::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--c); }
+#tour .m-row .pr{ text-align:right; font-size:14px; font-weight:600; white-space:nowrap; }
+#tour .m-row .pr small{ display:block; font-weight:400; font-size:10.5px; color:var(--muted); }
+#tour .m-row .pr.low{ color:var(--good); }
+#tour .pill{ font-size:9.5px; font-weight:600; color:var(--good); background:var(--good-bg); padding:1px 6px; border-radius:99px; margin-right:6px; vertical-align:1px; }
+#tour .m-add{ width:26px; height:26px; border-radius:50%; border:1px solid var(--line2); background:var(--surface); display:grid; place-items:center; font-size:15px; line-height:1; color:var(--text); transition:all .15s; }
+#tour .m-add.on{ background:var(--text); color:var(--bg); border-color:var(--text); }
+#tour .press{ transform:scale(.93) !important; }
+#tour .pulse{ animation:pulse .9s ease-out 2; }
+@keyframes pulse{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb, var(--good) 45%, transparent); } 100%{ box-shadow:0 0 0 12px transparent; } }
+#tour .mx-h,#tour .mx-r{ display:grid; grid-template-columns:172px repeat(6,1fr); align-items:center; }
+#tour .mx-h{ font-size:10px; font-weight:600; color:var(--muted); padding:6px 0 7px; border-bottom:1px solid var(--text); opacity:0; transition:opacity .3s; }
+#tour .mx-h.in{ opacity:1; }
+#tour .mx-h div:not(:first-child){ text-align:right; padding-right:6px; }
+#tour .mx-h i{ display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:4px; background:var(--c); }
+#tour .mx-row{ border-bottom:1px solid var(--line); opacity:0; transform:translateY(8px); transition:all .35s; }
+#tour .mx-row.in{ opacity:1; transform:none; }
+#tour .mx-r{ padding:7px 0; }
+#tour .mx-r .pn{ font-size:12px; font-weight:550; padding-right:8px; line-height:1.25; }
+#tour .mx-r .pn small{ display:block; font-weight:400; color:var(--muted); font-size:10px; margin-top:2px; }
+#tour .mx-c{ text-align:right; padding-right:4px; font-size:12px; font-weight:600; display:flex; flex-direction:column; align-items:flex-end; }
+#tour .mx-c small{ font-size:9.5px; font-weight:500; color:var(--muted); }
+#tour .mx-c.none{ color:var(--line2); font-weight:400; }
+#tour .mx-c.best b{ color:var(--good); background:var(--good-bg); padding:1px 6px; border-radius:6px; }
+#tour .mx-c .w{ color:var(--warn); font-weight:650; }
+#tour .mx-detail{ max-height:0; overflow:hidden; transition:max-height .45s ease; }
+#tour .mx-detail.open{ max-height:150px; }
+#tour .mx-d{ display:grid; grid-template-columns:1fr auto; gap:10px; padding:6px 0 6px 14px; border-top:1px dashed var(--line); font-size:11.5px; }
+#tour .mx-d span{ color:var(--muted); font-size:10.5px; display:block; margin-top:1px; }
+#tour .mx-d span em{ font-style:normal; color:var(--text); font-weight:500; }
+#tour .mx-d b{ font-size:12px; text-align:right; }
+#tour .tip{ position:absolute; z-index:6; background:var(--text); color:var(--bg); font-size:11px; line-height:1.35; padding:7px 10px; border-radius:8px; max-width:210px; opacity:0; transform:translateY(4px); transition:all .2s; pointer-events:none; }
+#tour .tip.on{ opacity:1; transform:none; }
+#tour .m-scrim{ position:absolute; inset:0; background:rgba(10,10,10,.28); opacity:0; pointer-events:none; transition:opacity .25s; z-index:8; }
+#tour .m-scrim.on{ opacity:1; }
+#tour .m-drawer{ position:absolute; top:0; bottom:0; right:0; width:330px; background:var(--bg); border-left:1px solid var(--line); z-index:9; transform:translateX(104%); transition:transform .4s cubic-bezier(.2,.7,.2,1); padding:16px 18px; box-shadow:var(--shadow); }
+#tour .m-drawer.on{ transform:none; }
+#tour .m-drawer h4{ margin:0 0 6px; font-size:15px; font-weight:650; }
+#tour .m-drawer .s{ font-size:11.5px; color:var(--muted); line-height:1.5; margin-bottom:6px; }
+#tour .m-drawer .s b{ color:var(--text); }
+#tour .dr{ padding:10px 0; border-bottom:1px solid var(--line); display:grid; grid-template-columns:1fr auto; gap:3px 10px; opacity:0; transform:translateX(10px); transition:all .35s; }
+#tour .dr.in{ opacity:1; transform:none; }
+#tour .dr .t{ font-size:12.5px; font-weight:500; }
+#tour .dr .t small{ display:flex; align-items:center; gap:5px; font-weight:500; color:var(--text); font-size:10.5px; margin-top:2px; }
+#tour .dr .t small::before{ content:""; width:6px; height:6px; border-radius:50%; background:var(--c); }
+#tour .dr .p{ text-align:right; font-size:13px; font-weight:600; }
+#tour .dr .bar{ height:4px; border-radius:9px; background:var(--line); overflow:hidden; }
+#tour .dr .bar i{ display:block; height:100%; background:var(--c); width:0; transition:width .7s ease .2s; }
+#tour .dr .d{ text-align:right; font-size:10.5px; font-weight:600; color:var(--muted); }
+#tour .dr.low .d{ color:var(--good); }
+#tour .m-toast{ position:absolute; left:50%; bottom:16px; transform:translate(-50%,16px); background:var(--text); color:var(--bg); padding:7px 13px; border-radius:10px; font-size:12px; font-weight:500; opacity:0; transition:all .25s; z-index:12; }
+#tour .m-toast.on{ opacity:1; transform:translate(-50%,0); }
+#tour .cursor{ position:absolute; z-index:20; left:620px; top:380px; width:22px; height:22px; transition:left .85s cubic-bezier(.45,.05,.2,1), top .85s cubic-bezier(.45,.05,.2,1), opacity .3s; filter:drop-shadow(0 2px 3px rgba(0,0,0,.35)); pointer-events:none; opacity:0; }
+#tour .cursor.on{ opacity:1; }
+#tour .ripple{ position:absolute; z-index:19; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%; border:2px solid var(--text); animation:rip .55s ease-out forwards; pointer-events:none; }
+@keyframes rip{ from{ transform:scale(.4); opacity:.9; } to{ transform:scale(3.2); opacity:0; } }
+@media (max-width:860px){#tour .tour{ grid-template-columns:1fr; }
+#tour .side{ border-right:0; border-bottom:1px solid var(--line); padding:20px 18px 14px; }
+#tour .side ol{ flex-direction:row; gap:4px; overflow-x:auto; }
+#tour .step{ min-width:150px; }
+#tour .step small{ display:none; }
+#tour .side .ssub{ margin-bottom:12px; }
+#tour .side .sfoot{ display:none; }
+#tour .main{ padding:16px 14px; }}
+@media (prefers-reduced-motion:reduce){#tour *{ transition:none !important; animation:none !important; }}
+
+/* ───── the tour ───── */
+#tour{ position:fixed; inset:0; z-index:90; display:flex; padding:20px; overflow:auto; background:rgba(10,10,10,.5); }
+#tour[hidden]{ display:none; }
+#tour .tour{ margin:auto; }
+body.tour-open{ overflow:hidden; }
+.watch{ margin-top:auto; align-self:flex-start; border:0; background:none; padding:0; display:inline-flex; align-items:center; gap:6px; color:var(--text); font-size:13px; font-weight:600;
+  text-decoration:underline; text-decoration-color:var(--line2); text-underline-offset:4px; }
+.watch:hover{ text-decoration-color:var(--text); }
+#tour .m-row .sb em, #tour .mx-d em, #tour .dr .t small{ padding:1px 7px; border-radius:6px; font-weight:600;
+  background:var(--hover); background:color-mix(in srgb, var(--c) 15%, transparent); color:color-mix(in srgb, var(--c) 68%, var(--text)); }
+#tour .m-row .sb em::before, #tour .dr .t small::before{ width:6px; height:6px; }
+#tour .mx-h .hc{ display:inline-block; padding:1px 6px; border-radius:5px; background:var(--hover);
+  background:color-mix(in srgb, var(--c) 15%, transparent); color:color-mix(in srgb, var(--c) 68%, var(--text)); }
+
+#tour .tour{ position:relative; }
+#tour .t-x{ display:none; position:absolute; top:10px; right:10px; z-index:5; width:36px; height:36px; place-items:center; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+@media (max-width:860px){
+  #tour{ padding:10px; }
+  #tour .tour{ grid-template-columns:minmax(0,1fr); }
+  #tour .side{ display:none; }
+  #tour .main{ min-width:0; padding:54px 14px 14px; }
+  #tour .t-x{ display:grid; }
+  #tour .cap{ min-height:0; }
+}
+@media (max-width:760px){
+  .steps{ grid-template-columns:1fr; gap:14px; }
+}
+@media (max-width:640px){
+  .mhead{ display:none; }
+  .mhead,.mr{ min-width:0; }
+  .mr{ display:block; padding-bottom:8px; }
+  .mc0{ position:static; padding:14px 4px 6px; }
+  .mcell{ display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:10px; padding:5px 4px 5px 20px; text-align:left; font-size:15px; }
+  .mcell .ln{ display:inline-flex; align-items:center; }
+  .mcell small{ margin:0; }
+  .mcell.none{ display:none; }
+  .md{ padding-left:4px; }
+}
+@media (max-width:640px){
+  .top{ padding:0 12px; gap:8px; } .rate{ font-size:12px; } .brand .logo{ height:30px; } h1{ font-size:32px; } .lead{ font-size:15px; }
+  main{ padding:0 14px 50px; } .hero{ padding-top:7vh; } .search{ height:52px; } .field input,.field .ghost{ font-size:16px; line-height:52px; }
+  .row{ grid-template-columns:minmax(0,1fr) auto 34px; gap:12px; } .btn .lbl{ display:none; }
+  .viewbar .sp{ margin-left:0; width:100%; justify-content:space-between; } .search .tabkey{ display:none !important; }
+}
+@media (max-width:380px){ .brand .logo{ aspect-ratio:108 / 118; background-size:auto 100%; } }
 @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
 </style>
 </head>
 <body>
 
 <header class="top">
-  <div class="brand"><i></i><span>RMS Prices</span></div>
-  <div class="seg" id="cur" role="group" aria-label="Currency">
-    <button data-v="USD">USD</button><button data-v="RWF">RWF</button>
+  <div class="brand"><span class="logo" role="img" aria-label="RMS Rwanda Medical Supply"></span></div>
+  <div class="curbox">
+    <div class="seg" id="cur" role="group" aria-label="Currency">
+      <button data-v="USD">USD</button><button data-v="RWF">RWF</button>
+    </div>
+    <div class="rate" id="rate"></div>
   </div>
+  <button class="icon" id="tourBtn" aria-label="How it works" title="How it works"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.6-2.4 2.1-2.4 3.6M12 17.2h.01"/></svg></button>
   <button class="icon" id="theme" aria-label="Switch between light and dark"></button>
-  <button class="btn" id="openCmp" aria-label="Open compare"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M4 17h16M4 12h6"/></svg><span class="lbl">Compare</span><span class="count" id="cmpN" data-n="0">0</span></button>
+  <button class="btn" id="openCmp" aria-label="Open your shortlist"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4z"/></svg><span class="lbl">Shortlist</span><span class="count" id="cmpN" data-n="0">0</span></button>
 </header>
 
 <main id="main">
   <section class="hero">
-    <h1>Search medicine and supply prices</h1>
-    <label class="search">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
-      <input id="q" type="text" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Try amoxicillin 500mg" aria-label="Search prices">
-      <kbd>/</kbd>
-      <button class="x" id="clear" type="button" aria-label="Clear search"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    </label>
-    <p class="hint" id="hint">Loading prices…</p>
-    <div class="legend" id="legend"></div>
+    <h1 class="extra">RMS Price Database</h1>
+    <p class="lead extra">Find a product once and see what every price list charges for it.</p>
+    <div class="sbox">
+      <label class="search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <span class="field">
+          <span class="ghost" id="ghost" aria-hidden="true"></span>
+          <input id="q" type="text" inputmode="search" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="sugg" aria-autocomplete="both" placeholder="Start typing a medicine or supply, e.g. amoxicillin" aria-label="Search prices">
+        </span>
+        <span class="tabkey" id="tabkey">Tab</span>
+        <kbd>/</kbd>
+        <button class="x" id="clear" type="button" aria-label="Clear search"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </label>
+      <div class="sugg" id="sugg" role="listbox" hidden></div>
+    </div>
+    <div class="chips extra" id="chips"></div>
+    <ol class="steps extra">
+      <li><b>1</b><div><strong>Search a product</strong><small>Type a name, strength or brand. Suggestions appear as you type.</small><button class="watch" type="button" data-tour="0"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>Watch</button></div></li>
+      <li><b>2</b><div><strong>Compare lists</strong><small>See that product in every price list side by side, with the lowest price marked.</small><button class="watch" type="button" data-tour="1"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>Watch</button></div></li>
+      <li><b>3</b><div><strong>Keep a shortlist</strong><small>Press + on any price to save it, then rank your picks.</small><button class="watch" type="button" data-tour="2"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>Watch</button></div></li>
+    </ol>
+    <div class="legend extra" id="legend"></div>
+    <p class="lead extra" id="hint" style="font-size:13px;margin:14px 0 0">Loading prices…</p>
   </section>
 
   <section id="results" hidden>
-    <div class="tabs" id="tabs" role="tablist"></div>
-    <div class="rhead">
-      <span id="count"></span>
-      <span class="sp">
-        <button class="link" id="lowest" type="button">Add lowest from each list</button>
-        <select id="sort" aria-label="Sort results">
-          <option value="best">Best match</option><option value="asc">Price, low to high</option>
-          <option value="desc">Price, high to low</option><option value="name">Name</option>
-        </select>
-        <button class="link" id="export" type="button">Export CSV</button>
-      </span>
+    <div class="viewbar">
+      <div class="seg2" id="viewSeg" role="group" aria-label="View">
+        <button data-v="results">Results</button>
+        <button data-v="compare">Compare lists</button>
+      </div>
+      <span class="sum" id="count"></span>
+      <span class="sp" id="tools"></span>
     </div>
+    <div class="tabs" id="tabs" role="tablist"></div>
     <ul id="rows"></ul>
+    <div class="mx" id="matrix" hidden></div>
     <div id="sentinel"></div>
     <p class="note" id="foot"></p>
   </section>
@@ -187,9 +458,37 @@ body.cmp #drawer{ transform:none; } body.cmp #scrim{ opacity:1; pointer-events:a
   <button class="adm" id="adminLink" type="button" aria-label="Admin">Admin</button>
 </footer>
 
+<div id="tour" role="dialog" aria-modal="true" aria-label="How it works" hidden>
+<section class="tour" aria-label="How it works">
+  <button class="icon t-x" id="t-close" aria-label="Close tour"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <aside class="side">
+    <h2>How it works</h2>
+    <p class="ssub">Three steps, about a minute.</p>
+    <ol id="steps">
+      <li><button class="step" data-i="0"><b>1</b><div><strong>Search a product</strong><small>Type a name, strength or brand. Suggestions appear as you type.</small></div></button></li>
+      <li><button class="step" data-i="1"><b>2</b><div><strong>Compare lists</strong><small>See that product in every price list side by side.</small></div></button></li>
+      <li><button class="step" data-i="2"><b>3</b><div><strong>Keep a shortlist</strong><small>Press + on any price to save it, then rank your picks.</small></div></button></li>
+    </ol>
+    <div class="sfoot"><button class="link" id="skip">Skip tour</button></div>
+  </aside>
+
+  <div class="main">
+    <div class="stage" id="t-stage" role="img" aria-label="Animated demonstration of the current step">
+      <div class="screen" id="t-screen" aria-hidden="true"></div>
+    </div>
+    <div class="cap" aria-live="polite"><div class="n" id="capN"></div><h3 id="capT"></h3><p id="capP"></p></div>
+    <div class="nav">
+      <button class="btn" id="back">Back</button>
+      <div class="dots" id="dots"><button data-i="0" aria-label="Step 1"></button><button data-i="1" aria-label="Step 2"></button><button data-i="2" aria-label="Step 3"></button></div>
+      <button class="btn primary" id="next">Next</button>
+    </div>
+  </div>
+</section>
+</div>
+
 <div id="scrim"></div>
-<aside id="drawer" aria-label="Compare" aria-hidden="true">
-  <div class="dh"><h2>Compare</h2>
+<aside id="drawer" aria-label="Shortlist" aria-hidden="true">
+  <div class="dh"><h2>Shortlist</h2>
     <button class="icon" id="closeCmp" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <div class="db" id="cmpBody"></div>
   <div class="df" id="cmpFoot"><button class="btn" id="cmpExport">Export CSV</button><button class="btn primary" id="cmpClear">Clear all</button></div>
@@ -202,54 +501,59 @@ body.cmp #drawer{ transform:none; } body.cmp #scrim{ opacity:1; pointer-events:a
 /* if anything goes wrong, say so on the page instead of leaving it silent */
 function fail(msg){ const h = document.getElementById('hint'); if (h){ h.style.color = '#B3261E'; h.textContent = 'Something went wrong while loading: ' + msg; } }
 window.addEventListener('error', e => fail(e.message || 'unknown error'));
+
 /* ───────────────────────── data ───────────────────────── */
 const D = JSON.parse(document.getElementById('data').textContent);
-const N = D.n, C = D.cols, DI = D.dict, LISTS = D.lists, FX = D.fx;
-const PAGE = 40, MAX_TRAY = 12;
+const N = D.n, C = D.cols, DI = D.dict, LISTS = D.lists, FX = D.fx, FXI = D.fxinfo || {};
+const PAGE = 40, GROUP_PAGE = 30, MAX_TRAY = 12;
 const $ = id => document.getElementById(id);
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : v; }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
 };
 
-/* normalised text used for searching: lower-case, no accents, "500mg" -> "500 mg", words split on punctuation */
+/* normalised text for searching: lower-case, no accents, "500mg" -> "500 mg", words split on punctuation */
 function norm(s){
   s = String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   s = s.replace(/(\d),(?=\d)/g, '$1.').replace(/(\d)(?=[a-z])/g, '$1 ');
-  s = s.replace(/\.(?!\d)|(?<!\d)\./g, ' ').replace(/[^a-z0-9.]+/g, ' ').trim();
+  s = s.replace(/\.(?!\d)/g, ' ').replace(/(^|[^0-9])\./g, '$1 ').replace(/[^a-z0-9.]+/g, ' ').trim();
   return ' ' + s + ' ';
 }
 const NAME = new Array(N), ALL = new Array(N);
 for (let i = 0; i < N; i++){
-  const p = C.p[i];
-  NAME[i] = norm(p);
-  ALL[i] = norm(p + ' ' + DI.detail[C.detail[i]] + ' ' + DI.sub[C.sub[i]] + ' ' + DI.cat[C.cat[i]]);
+  NAME[i] = norm(C.p[i]);
+  ALL[i] = norm(C.p[i] + ' ' + DI.detail[C.detail[i]] + ' ' + DI.sub[C.sub[i]] + ' ' + DI.cat[C.cat[i]]);
 }
 
 /* ───────────────────────── state ───────────────────────── */
 let cur = store.get('rms-cur', 'USD');
 let theme = store.get('rms-theme', 'light');
-let query = '', listFilter = -1, sortBy = 'best', shown = 0;
-let matches = [];            // row indices after search + list filter + sort
-let LOW = Infinity;          // lowest price among the matches (in the chosen currency)
-let base = null;             // search result before the list filter: {idx, score, toks, mode}
-let tray = [];               // row indices being compared
+let view = store.get('rms-view', 'results') === 'compare' ? 'compare' : 'results';
+let onlyShared = false;
+let query = '', listFilter = -1, sortBy = 'best', shown = 0, gShown = 0;
+let matches = [], LOW = Infinity, base = null;
+let groups = [], colLists = [];
+let tray = [];
+const openGroups = new Set();
 
 /* ───────────────────────── formatting ───────────────────────── */
 function fmtUSD(v){ if (v == null) return ''; return v >= 1 ? '$' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
   : v >= 0.1 ? '$' + v.toFixed(3) : v >= 0.0001 ? '$' + v.toFixed(4) : '<$0.0001'; }
-function fmtRWF(v){ if (v == null) return ''; return 'RWF ' + (v >= 100 ? Math.round(v).toLocaleString('en-US')
-  : v >= 10 ? v.toFixed(1) : v.toFixed(2)); }
+function fmtRWF(v){ if (v == null) return ''; return 'RWF ' + (v >= 100 ? Math.round(v).toLocaleString('en-US') : v >= 10 ? v.toFixed(1) : v.toFixed(2)); }
+const rateText = () => Math.round(FX).toLocaleString('en-US');
 const money = (v, c) => c === 'USD' ? fmtUSD(v) : fmtRWF(v);
 const other = () => cur === 'USD' ? 'RWF' : 'USD';
 const price = (i, c = cur) => c === 'USD' ? C.u[i] : C.r[i];
 const esc = s => String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const pack = i => DI.pack[C.pack[i]], detail = i => DI.detail[C.detail[i]], cat = i => DI.cat[C.cat[i]], note = i => DI.note[C.note[i]];
 const listOf = i => LISTS[C.l[i]];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const plural = (n, w) => n.toLocaleString('en-US') + ' ' + w + (n === 1 ? '' : 's');
 
 /* ───────────────────────── search ───────────────────────── */
+function tokensOf(q){ return norm(q).match(/[a-z0-9]+(?:\.\d+)?/g) || []; }
 function runSearch(q){
-  const toks = norm(q).match(/[a-z0-9]+(?:\.\d+)?/g) || [];
+  const toks = tokensOf(q);
   if (!toks.length) return {idx: [], score: [], toks, mode: 'none'};
   for (const mode of ['word', 'sub']){
     const idx = [], score = [];
@@ -267,9 +571,22 @@ function runSearch(q){
   }
   return {idx: [], score: [], toks, mode: 'none'};
 }
-
+const countCache = new Map();
+function countSearch(q){                      // how many results a search would give, without building them
+  if (countCache.has(q)) return countCache.get(q);
+  const toks = tokensOf(q); let result = 0;
+  if (toks.length){
+    for (const mode of ['word', 'sub']){
+      const keys = toks.map(t => mode === 'word' ? ' ' + t : t); let c = 0;
+      for (let i = 0; i < N; i++){ const a = ALL[i]; let ok = true; for (let k = 0; k < keys.length; k++){ if (!a.includes(keys[k])){ ok = false; break; } } if (ok) c++; }
+      if (c){ result = c; break; }
+    }
+  }
+  countCache.set(q, result); return result;
+}
 function rebuild(){
   base = query.trim() ? runSearch(query) : null;
+  groups = null; openGroups.clear();
   applyFilter();
 }
 function applyFilter(){
@@ -283,12 +600,165 @@ function applyFilter(){
   else idx.sort((a, b) => b[1] - a[1] || p(a[0]) - p(b[0]));
   matches = idx.map(x => x[0]);
   LOW = Infinity; for (const i of matches){ const v = price(i); if (v != null && v < LOW) LOW = v; }
-  shown = 0;
+  shown = 0; gShown = 0;
   render();
 }
 
-/* ───────────────────────── rendering: results ───────────────────────── */
-const main = $('main'), rowsEl = $('rows');
+/* ───────────────────────── predictive typing ───────────────────────── */
+let PH = null;                                // sorted list of name prefixes (1 to 4 words) with how often each occurs
+function buildPhrases(){
+  const cnt = new Map();
+  for (let i = 0; i < N; i++){
+    const w = NAME[i].trim().split(' ');
+    if (!/^[a-z]/.test(w[0])) continue;
+    let p = '';
+    for (let k = 0; k < w.length && k < 4; k++){ p = k ? p + ' ' + w[k] : w[k]; cnt.set(p, (cnt.get(p) || 0) + 1); }
+  }
+  const arr = []; for (const [p, c] of cnt){ if (c >= 2 || p.indexOf(' ') < 0) arr.push(p); }
+  arr.sort(); PH = {arr, cnt};
+}
+function lowerBound(arr, q){ let lo = 0, hi = arr.length; while (lo < hi){ const m = (lo + hi) >> 1; if (arr[m] < q) lo = m + 1; else hi = m; } return lo; }
+
+let VOCAB = null;                             // words for spelling help
+function fuzzyWords(word){
+  if (word.length < 4) return [];
+  if (!VOCAB){ const m = new Map(); for (let i = 0; i < N; i++) for (const w of NAME[i].trim().split(' ')) if (w.length > 3 && /^[a-z]+$/.test(w)) m.set(w, (m.get(w) || 0) + 1); VOCAB = [...m.entries()]; }
+  const maxd = word.length > 6 ? 2 : 1, out = [];
+  for (const [w, n] of VOCAB){
+    if (Math.abs(w.length - word.length) > maxd || w[0] !== word[0]) continue;
+    const d = lev(word, w, maxd); if (d <= maxd) out.push([d, -n, w]);
+  }
+  return out.sort((a, b) => a[0] - b[0] || a[1] - b[1]).slice(0, 4).map(x => x[2]);
+}
+function lev(a, b, max){
+  let prev = Array.from({length: b.length + 1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++){
+    const row = [i]; let best = i;
+    for (let j = 1; j <= b.length; j++){ row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); best = Math.min(best, row[j]); }
+    if (best > max) return max + 1;
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+/* what to offer for the text typed so far: {kind, items:[{text, n, raw}]} */
+function predict(raw){
+  const qn = norm(raw).trim();
+  if (!qn) return {kind: 'none', items: []};
+  if (!PH) buildPhrases();
+  const qp = qn + (/\s$/.test(raw) ? ' ' : '');
+  const cand = [];
+  for (let i = lowerBound(PH.arr, qp); i < PH.arr.length && PH.arr[i].startsWith(qp) && cand.length < 500; i++) cand.push(PH.arr[i]);
+  if (cand.length){
+    const endsInNumber = p => /(^|\s)[\d.]+$/.test(p);
+    const usable = cand.filter(p => !endsInNumber(p) || p === qn);
+    usable.sort((a, b) => PH.cnt.get(b) - PH.cnt.get(a) || b.length - a.length);
+    const pick = [];
+    for (const p of usable){
+      if (pick.some(s => s.startsWith(p + ' ') && PH.cnt.get(s) === PH.cnt.get(p))) continue;   // a fuller phrase is just as common
+      pick.push(p); if (pick.length === 7) break;
+    }
+    if (!pick.length) pick.push(...cand.slice(0, 5));
+    return {kind: 'predict', qp, items: pick.map(p => ({text: p, n: countSearch(p)}))};
+  }
+  const toks = tokensOf(raw);
+  if (toks.length === 1){
+    const f = fuzzyWords(toks[0]);
+    if (f.length) return {kind: 'fuzzy', items: f.map(w => ({text: w, n: countSearch(w)}))};
+  }
+  const r = runSearch(raw), seen = new Set(), items = [];
+  const order = r.idx.map((i, k) => [i, r.score[k]]).sort((a, b) => b[1] - a[1] || NAME[a[0]].length - NAME[b[0]].length).slice(0, 80);
+  for (const [i] of order){ if (!seen.has(NAME[i])){ seen.add(NAME[i]); items.push({text: C.p[i], n: 0, raw: true}); if (items.length === 6) break; } }
+  return {kind: items.length ? 'products' : 'none', items};
+}
+
+const CHIPS = ['paracetamol', 'amoxicillin 500mg', 'insulin', 'oxytocin', 'artemether', 'ceftriaxone', 'surgical gloves', 'syringe', 'malaria test', 'condom'];
+let popular = CHIPS;
+function recent(){ try{ return JSON.parse(store.get('rms-recent', '[]')); }catch(e){ return []; } }
+function saveRecent(q){
+  q = q.trim(); if (q.length < 3) return;
+  const list = recent().filter(x => x.toLowerCase() !== q.toLowerCase()); list.unshift(q);
+  store.set('rms-recent', JSON.stringify(list.slice(0, 6)));
+}
+const ICON_SEARCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>';
+const ICON_CLOCK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+
+const qEl = $('q'), sugg = $('sugg');
+let sItems = [], sSel = -1, ghostFull = '';
+function setGhost(items, raw){
+  ghostFull = '';
+  const top = items[0] && !items[0].raw ? items[0].text : '';
+  const ql = raw.toLowerCase();
+  if (top && raw && top.startsWith(ql) && top.length > ql.length && qEl.selectionStart === raw.length) ghostFull = raw + top.slice(ql.length);
+  $('ghost').innerHTML = ghostFull ? esc(raw) + '<b>' + esc(ghostFull.slice(raw.length)) + '</b>' : '';
+  $('tabkey').classList.toggle('on', !!ghostFull);
+}
+function showSuggestions(){
+  const raw = qEl.value;
+  let html = '', items = [];
+  if (!raw.trim()){
+    const rec = recent();
+    if (rec.length){
+      html += '<div class="lab">Recent searches<button type="button" data-clear-recent>Clear</button></div>';
+      rec.forEach(t => { items.push({text: t}); html += optHTML(items.length - 1, ICON_CLOCK, esc(t), ''); });
+    }
+    html += '<div class="lab">Popular searches</div>';
+    popular.slice(0, 6).forEach(t => { items.push({text: t}); html += optHTML(items.length - 1, ICON_SEARCH, esc(cap(t)), ''); });
+    setGhost([], '');
+  } else {
+    const p = predict(raw);
+    items = p.items;
+    if (!items.length){ sugg.hidden = true; sItems = []; setGhost([], raw); qEl.setAttribute('aria-expanded', 'false'); return; }
+    html += '<div class="lab">' + (p.kind === 'predict' ? 'Suggestions' : p.kind === 'fuzzy' ? 'Did you mean' : 'Matching products') + '</div>';
+    items.forEach((it, k) => {
+      const t = it.raw ? it.text : cap(it.text);
+      const lead = p.kind === 'predict' && it.text.startsWith(p.qp) ? '<b>' + esc(t.slice(0, p.qp.length)) + '</b>' + esc(t.slice(p.qp.length)) : esc(t);
+      html += optHTML(k, ICON_SEARCH, lead, it.n ? plural(it.n, 'result') : '');
+    });
+    setGhost(items, raw);
+  }
+  sItems = items; sSel = -1;
+  sugg.innerHTML = html; sugg.hidden = false; qEl.setAttribute('aria-expanded', 'true');
+}
+function optHTML(k, icon, text, n){ return `<div class="opt" role="option" data-k="${k}" aria-selected="false">${icon}<span class="t">${text}</span>${n ? `<span class="n">${n}</span>` : ''}</div>`; }
+function hideSuggestions(){ sugg.hidden = true; qEl.setAttribute('aria-expanded', 'false'); sSel = -1; }
+function moveSel(d){
+  if (sugg.hidden || !sItems.length) return;
+  sSel = (sSel + d + sItems.length + 1) % (sItems.length + 1); if (sSel === sItems.length) sSel = -1;
+  sugg.querySelectorAll('.opt').forEach(o => o.setAttribute('aria-selected', String(+o.dataset.k === sSel)));
+  const o = sugg.querySelector('.opt[aria-selected="true"]'); if (o) o.scrollIntoView({block: 'nearest'});
+}
+function commit(text){
+  qEl.value = text; query = text; listFilter = -1; saveRecent(text);
+  hideSuggestions(); setGhost([], text); rebuild();
+}
+function pickItem(k){ const it = sItems[k]; if (it) commit(it.raw ? it.text : cap(it.text)); }
+
+let timer;
+qEl.addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(() => { query = qEl.value; listFilter = -1; rebuild(); showSuggestions(); }, 70);
+});
+let autoFocused = false;                       // the page focuses the box on load; that must not open the list over the guide
+qEl.addEventListener('focus', () => { if (autoFocused){ autoFocused = false; return; } showSuggestions(); });
+qEl.addEventListener('mousedown', () => { if (sugg.hidden) setTimeout(showSuggestions, 0); });
+qEl.addEventListener('blur', () => { setTimeout(hideSuggestions, 140); if (base && matches.length) saveRecent(query); });
+qEl.addEventListener('keydown', e => {
+  const atEnd = qEl.selectionStart === qEl.value.length && qEl.selectionEnd === qEl.value.length;
+  if (e.key === 'ArrowDown'){ e.preventDefault(); if (sugg.hidden) showSuggestions(); else moveSel(1); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); moveSel(-1); }
+  else if (e.key === 'Enter'){ if (sSel >= 0){ e.preventDefault(); pickItem(sSel); } else { saveRecent(qEl.value); hideSuggestions(); setGhost([], qEl.value); } }
+  else if ((e.key === 'Tab' || e.key === 'ArrowRight') && ghostFull && atEnd && sSel < 0){ e.preventDefault(); commit(ghostFull); }
+  else if (e.key === 'Escape'){ if (!sugg.hidden){ e.stopPropagation(); hideSuggestions(); } }
+});
+sugg.addEventListener('mousedown', e => {
+  e.preventDefault();
+  if (e.target.closest('[data-clear-recent]')){ store.set('rms-recent', '[]'); showSuggestions(); return; }
+  const o = e.target.closest('.opt'); if (o) pickItem(+o.dataset.k);
+});
+
+/* ───────────────────────── results list ───────────────────────── */
+const main = $('main'), rowsEl = $('rows'), matrixEl = $('matrix');
 function hl(text){
   let out = esc(text);
   if (!base) return out;
@@ -298,84 +768,194 @@ function hl(text){
   }
   return out;
 }
-function rowHTML(i, lowest){
-  const L = listOf(i), p = price(i), alt = price(i, other());
-  const bits = [];
+const SVG_PLUS = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+const SVG_CHECK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const addBtn = i => { const on = tray.includes(i); return `<button class="add" data-add="${i}" aria-pressed="${on}" aria-label="${on ? 'Remove from shortlist' : 'Add to shortlist'}">${on ? SVG_CHECK : SVG_PLUS}</button>`; };
+function metaBits(i, withCat){
+  const L = listOf(i), bits = [];
   if (detail(i) && norm(detail(i)) !== NAME[i]) bits.push(esc(detail(i)));
   if (pack(i)) bits.push('pack ' + esc(pack(i)));
   if (note(i)) bits.push(L.label.startsWith('RHIA') ? 'prescriber ' + esc(note(i)) : esc(note(i)));
-  if (cat(i) && cat(i) !== 'Uncategorised') bits.push(esc(cat(i)));
-  const on = tray.includes(i);
-  const tip = L.cur === other() ? `Published in ${L.cur}; ${cur} converted at ${FX.toLocaleString('en-US')}` : '';
-  return `<li class="row" data-i="${i}"><div><div class="name">${hl(C.p[i])}</div>
-<div class="sub"><span class="chip" style="--c:var(--l${L.color})"><span class="dot"></span>${esc(L.label)}</span>${bits.map(b => `<span>${b}</span>`).join('')}</div></div>
+  if (withCat && cat(i) && cat(i) !== 'Uncategorised') bits.push(esc(cat(i)));
+  return bits;
+}
+function rowHTML(i, lowest){
+  const L = listOf(i), p = price(i), alt = price(i, other());
+  const tip = L.cur === other() ? `Published in ${L.cur}; ${cur} converted at ${rateText()}` : '';
+  return `<li class="row"><div><div class="name">${hl(C.p[i])}</div>
+<div class="sub"><span class="chip" style="--c:var(--l${L.color})"><span class="dot"></span>${esc(L.label)}</span>${metaBits(i, true).map(b => `<span>${b}</span>`).join('')}</div></div>
 <div class="price ${lowest ? 'low' : ''}" ${tip ? `title="${esc(tip)}"` : ''}>${lowest ? '<span class="pill">Lowest</span>' : ''}${money(p, cur)}<small>${money(alt, other())}</small></div>
-<button class="add" data-add="${i}" aria-pressed="${on}" aria-label="${on ? 'Remove from compare' : 'Add to compare'}">${on
-  ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
-  : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'}</button></li>`;
+${addBtn(i)}</li>`;
 }
 function moreRows(){
   if (shown >= matches.length) return;
-  const end = Math.min(shown + PAGE, matches.length);
-  let html = '';
+  const end = Math.min(shown + PAGE, matches.length); let html = '';
   for (let k = shown; k < end; k++){ const i = matches[k]; html += rowHTML(i, matches.length > 1 && price(i) === LOW); }
-  rowsEl.insertAdjacentHTML('beforeend', html);
-  shown = end;
+  rowsEl.insertAdjacentHTML('beforeend', html); shown = end;
+}
+
+/* ───────────────────────── compare lists: group the same product across lists ───────────────────────── */
+const UNITS = new Set(['mg', 'g', 'mcg', 'iu', 'ml', 'mmol', 'meq', 'pct', 'unit', 'units', 'dose', 'doses', 'ui']);
+const FORM = {tablet:'tablet or capsule', tablets:'tablet or capsule', tab:'tablet or capsule', tabs:'tablet or capsule', fct:'tablet or capsule', ct:'tablet or capsule', caplet:'tablet or capsule',
+  capsule:'tablet or capsule', capsules:'tablet or capsule', cap:'tablet or capsule', caps:'tablet or capsule',
+  syrup:'oral liquid', syr:'oral liquid', suspension:'oral liquid', susp:'oral liquid', sus:'oral liquid', liquid:'oral liquid', liq:'oral liquid', elixir:'oral liquid',
+  injection:'injection', inj:'injection', infusion:'injection', vial:'injection', ampoule:'injection', amp:'injection',
+  cream:'topical', ointment:'topical', gel:'topical', lotion:'topical', crm:'topical', oin:'topical',
+  powder:'powder', pow:'powder', sachet:'powder', suppository:'suppository', sup:'suppository', pessary:'pessary', drops:'drops', inhaler:'inhaler', spray:'spray', patch:'patch'};
+const SALT = new Set(['trihydrate', 'dihydrate', 'monohydrate', 'anhydrous', 'hydrochloride', 'hydrobromide', 'hcl', 'sodium', 'disodium', 'potassium', 'calcium', 'magnesium', 'sulfate', 'sulphate',
+  'acetate', 'phosphate', 'maleate', 'tartrate', 'mesylate', 'besylate', 'citrate', 'bromide', 'succinate', 'fumarate', 'nitrate', 'lactate', 'gluconate', 'base', 'bp', 'usp', 'eur', 'ip']);
+const STOP = new Set(['and', 'with', 'for', 'the', 'plus', 'acid', 'oral', 'film', 'coated', 'dispersible', 'effervescent', 'modified', 'release', 'extended', 'sustained', 'enteric', 'chewable',
+  'prolonged', 'pack', 'bottle', 'blister', 'strip', 'box', 'each', 'per', 'pre', 'filled', 'single', 'use', 'sterile', 'solution', 'eye', 'ear', 'nasal', 'topical', 'rectal', 'vaginal', 'intravenous',
+  'intramuscular', 'subcutaneous', 'adult', 'paediatric', 'pediatric', 'children', 'generic', 'brand', 'type', 'size', 'tablet', 'capsule', 'mixture', 'preparation', 'dosage', 'form', 'other', 'iv', 'im', 'sc', 'po']);
+const PARSED = new Array(N);
+function fnum(n){ return String(+n.toFixed(4)); }
+function normStrength(v, u){
+  if (u === 'g') return fnum(v * 1000) + ' mg';
+  if (u === 'mcg') return fnum(v / 1000) + ' mg';
+  if (u === 'units' || u === 'unit' || u === 'ui') u = 'iu';
+  if (u === 'doses') u = 'dose';
+  return fnum(v) + ' ' + u;
+}
+const prep = t => String(t).replace(/[\u00B5\u03BC]\s*g/gi, ' mcg ').replace(/%/g, ' pct ');
+function parseItem(i){
+  if (PARSED[i]) return PARSED[i];
+  const text = C.p[i];
+  const toks = norm(prep(text)).trim().split(' ');
+  const combo = /\+|[A-Za-z]\s*\/\s*[A-Za-z]/.test(text);          // "A + B" or "A/B" is a combination product
+  let form = '', seenNum = false; const strengths = [], words = [], all = new Set(), noSalt = new Set();
+  for (let k = 0; k < toks.length; k++){
+    const t = toks[k];
+    if (/^\d+(\.\d+)?$/.test(t)){ seenNum = true; const u = toks[k + 1]; if (u && UNITS.has(u)){ strengths.push(normStrength(parseFloat(t), u)); k++; } continue; }
+    if (!/^[a-z]+$/.test(t)) continue;
+    if (FORM[t]){ if (!form) form = FORM[t]; continue; }
+    if (UNITS.has(t)) continue;
+    if (STOP.has(t) || t.length < 3) continue;
+    all.add(t.slice(0, 6)); if (!SALT.has(t)) noSalt.add(t.slice(0, 6));
+    if (!SALT.has(t) && (!seenNum || combo)) words.push(t);          // words after the first number only matter for combinations
+  }
+  if (!form){ for (const t of norm(prep(detail(i))).trim().split(' ')){ if (FORM[t]){ form = FORM[t]; break; } } }
+  const stems = noSalt.size ? noSalt : all;
+  const uniq = [...new Set(strengths)];
+  const key = stems.size ? [...stems].sort().join('+') + '|' + [...uniq].sort().join('+') + '|' + form : 'raw:' + NAME[i];
+  const seen = new Set(), ing = words.filter(w => { const s = w.slice(0, 6); if (seen.has(s)) return false; seen.add(s); return true; });
+  const name = ing.length ? cap(ing.join(combo ? ' + ' : ' ')) : '';
+  const label = name ? name + (uniq.length ? ' ' + uniq.join(' / ') : '') + (form ? ' (' + form + ')' : '') : text;
+  return (PARSED[i] = {key, label});
+}
+function buildGroups(){
+  const map = new Map();
+  for (const i of base.idx){
+    const p = parseItem(i); let g = map.get(p.key);
+    if (!g){ g = {key: p.key, label: p.label, rep: i, items: [], byList: new Map()}; map.set(p.key, g); }
+    g.items.push(i);
+    const l = C.l[i]; if (!g.byList.has(l)) g.byList.set(l, []); g.byList.get(l).push(i);
+    if (NAME[i].length < NAME[g.rep].length){ g.rep = i; g.label = p.label; }
+  }
+  groups = [...map.values()].sort((a, b) => b.byList.size - a.byList.size || b.items.length - a.items.length || (a.label < b.label ? -1 : 1));
+}
+function visibleGroups(){ if (!groups) buildGroups(); return onlyShared ? groups.filter(g => g.byList.size > 1) : groups; }
+const listMin = (arr) => arr.reduce((m, i) => (price(i) ?? Infinity) < (price(m) ?? Infinity) ? i : m, arr[0]);
+
+function groupRowHTML(g, gi){
+  let best = Infinity; const cells = colLists.map(l => { const arr = g.byList.get(l); if (!arr) return null; const m = listMin(arr); const v = price(m); if (v != null && v < best) best = v; return {m, n: arr.length, v, l}; });
+  const open = openGroups.has(g.key);
+  let html = `<div class="mrow ${open ? 'open' : ''}" data-gi="${gi}"><div class="mr" role="button" tabindex="0" aria-expanded="${open}">
+<div class="mc0"><div class="gl"><i>&#9656;</i><span>${esc(g.label)}</span></div><div class="gs">${plural(g.items.length, 'option')} in ${plural(g.byList.size, 'list')}</div></div>`;
+  cells.forEach(c => {
+    if (!c){ html += '<div class="mcell none">&ndash;</div>'; return; }
+    const isBest = c.v === best && g.byList.size > 1;
+    const ratio = !isBest && best > 0 && isFinite(best) ? c.v / best : 0;
+    const delta = !ratio ? '' : ratio >= 10
+      ? `<span class="warn" title="This is ${Math.round(ratio).toLocaleString('en-US')} times the lowest price. A gap this large usually means a different pack size rather than a real price difference. Open the row to check the pack.">&times;${Math.round(ratio).toLocaleString('en-US')} &#9888;</span>`
+      : `<span>+${Math.round((ratio - 1) * 100)}%</span>`;
+    html += `<div class="mcell ${isBest ? 'best' : ''}"><span class="ln"><span class="chip" style="--c:var(--l${LISTS[c.l].color})"><span class="dot"></span>${esc(LISTS[c.l].label)}</span></span><b>${money(c.v, cur)}</b>${(delta || c.n > 1) ? `<small>${delta}${c.n > 1 ? `<span>${c.n} options</span>` : ''}</small>` : ''}</div>`;
+  });
+  html += '</div>';
+  if (open) html += detailHTML(g);
+  return html + '</div>';
+}
+function detailHTML(g){
+  const items = [...g.items].sort((a, b) => C.l[a] - C.l[b] || (price(a) ?? Infinity) - (price(b) ?? Infinity));
+  return '<div class="md">' + items.map(i => {
+    const L = listOf(i), bits = metaBits(i, false);
+    return `<div class="mdi"><div><div class="nm">${esc(C.p[i])}</div><div class="sub"><span class="chip" style="--c:var(--l${L.color})"><span class="dot"></span>${esc(L.label)}</span>${bits.map(b => `<span>${b}</span>`).join('')}</div></div>
+<div class="price">${money(price(i), cur)}<small>${money(price(i, other()), other())}</small></div>${addBtn(i)}</div>`;
+  }).join('') + '</div>';
+}
+function renderMatrix(){
+  const gs = visibleGroups();
+  if (!gs.length){
+    matrixEl.innerHTML = `<div class="empty"><b>Nothing to compare</b>${onlyShared ? 'No product in this search appears in two or more lists. Untick “Only products in 2+ lists” to see everything.' : 'No matches.'}</div>`;
+    return;
+  }
+  const present = new Set(); gs.forEach(g => g.byList.forEach((_, l) => present.add(l)));
+  colLists = [...present].sort((a, b) => a - b);
+  const head = `<div class="mhead" style="--cols:${colLists.length}"><div>Product</div>${colLists.map(l => {
+    const n = gs.filter(g => g.byList.has(l)).length;
+    return `<div title="${esc(LISTS[l].label)}"><span class="chip" style="--c:var(--l${LISTS[l].color})"><span class="dot"></span>${esc(LISTS[l].label)}</span></div>`; }).join('')}</div>`;
+  matrixEl.style.setProperty('--cols', colLists.length);
+  matrixEl.innerHTML = head + '<div id="mrows"></div>';
+  gShown = 0; moreGroups();
+  $('foot').textContent = 'Products are grouped automatically by ingredient, strength and form. Open a row to see every option behind a price. Prices are per selling unit as published, so check the pack before relying on a gap.';
+}
+function moreGroups(){
+  const gs = visibleGroups(); if (gShown >= gs.length) return;
+  const end = Math.min(gShown + GROUP_PAGE, gs.length); let html = '';
+  for (let k = gShown; k < end; k++) html += groupRowHTML(gs[k], k);
+  const host = $('mrows'); if (host) host.insertAdjacentHTML('beforeend', html); gShown = end;
+}
+function toggleGroup(row){
+  const gs = visibleGroups(), g = gs[+row.dataset.gi]; if (!g) return;
+  if (openGroups.has(g.key)) openGroups.delete(g.key); else openGroups.add(g.key);
+  row.outerHTML = groupRowHTML(g, +row.dataset.gi);
+}
+/* ───────────────────────── page render ───────────────────────── */
+function toolsHTML(counts){
+  if (view === 'compare') return `<label class="check"><input type="checkbox" id="only" ${onlyShared ? 'checked' : ''}>Only products in 2+ lists</label><button class="link" id="export" type="button">Export CSV</button>`;
+  return `${counts.size > 1 ? '<button class="link" id="lowest" type="button">Add lowest from each list</button>' : ''}
+<select id="sort" aria-label="Sort results"><option value="best">Best match</option><option value="asc">Price, low to high</option><option value="desc">Price, high to low</option><option value="name">Name</option></select>
+<button class="link" id="export" type="button">Export CSV</button>`;
 }
 function render(){
   const active = !!base;
   main.classList.toggle('active', active);
+  main.classList.toggle('wide', active && view === 'compare');
   $('results').hidden = !active;
   if (!active) return;
+  document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === view)));
 
-  // tabs: one per list that has matches
   const counts = new Map();
-  for (const i of base.idx){ counts.set(C.l[i], (counts.get(C.l[i]) || 0) + 1); }
+  for (const i of base.idx) counts.set(C.l[i], (counts.get(C.l[i]) || 0) + 1);
+  $('tools').innerHTML = toolsHTML(counts);
+  if ($('sort')) $('sort').value = sortBy;
+  const none = !base.idx.length;
+  $('tabs').hidden = view !== 'results' || none;
+  rowsEl.hidden = view !== 'results'; matrixEl.hidden = view !== 'compare';
+  rowsEl.innerHTML = ''; matrixEl.innerHTML = '';
+
+  if (none){
+    $('count').textContent = '';
+    const tips = base.toks.length ? fuzzyWords(base.toks[0]) : [];
+    const msg = `<div class="empty"><b>No matches for “${esc(query.trim())}”</b>Try fewer words or a shorter spelling.${tips.length ? '<div>' + tips.map(t => `<button class="btn" data-q="${esc(t)}">${esc(t)}</button>`).join('') + '</div>' : ''}</div>`;
+    if (view === 'results') rowsEl.innerHTML = '<li class="empty" style="padding:0">' + msg + '</li>'; else matrixEl.innerHTML = msg;
+    $('foot').textContent = ''; return;
+  }
+  if (view === 'compare'){
+    const gs = visibleGroups();
+    const shared = gs.filter(g => g.byList.size > 1).length;
+    $('count').textContent = `${plural(gs.length, 'product')} across ${plural(counts.size, 'list')}` + (shared ? `, ${shared.toLocaleString('en-US')} found in 2+ lists` : ', none found in more than one list') + '. Lowest price in green.';
+    renderMatrix(); return;
+  }
   const tabs = [[-1, 'All', base.idx.length, null]];
   [...counts.entries()].sort((a, b) => b[1] - a[1]).forEach(([l, n]) => tabs.push([l, LISTS[l].label, n, LISTS[l].color]));
-  $('tabs').innerHTML = tabs.map(([l, label, n, c]) => `<button role="tab" data-l="${l}" aria-selected="${l === listFilter}">${c !== null ? `<span class="dot" style="--c:var(--l${c})"></span>` : ''}${esc(label)} <small>${n.toLocaleString('en-US')}</small></button>`).join('');
-
-  rowsEl.innerHTML = '';
-  $('sort').value = sortBy;
-  $('lowest').hidden = counts.size < 2;
-  if (!matches.length){
-    $('count').textContent = '';
-    const tips = base.toks.length ? suggest(base.toks[0]) : [];
-    rowsEl.innerHTML = `<li class="empty"><b>No matches for “${esc(query.trim())}”</b>Try fewer words or a shorter spelling.${tips.length ? '<div>' + tips.map(t => `<button class="btn" data-q="${esc(t)}">${esc(t)}</button>`).join('') + '</div>' : ''}</li>`;
-    $('foot').textContent = '';
-    return;
-  }
-  $('count').textContent = `${matches.length.toLocaleString('en-US')} ${matches.length === 1 ? 'result' : 'results'}` + (base.mode === 'sub' ? ', matched inside words' : '');
+  $('tabs').innerHTML = tabs.map(([l, label, n, c]) => `<button role="tab" data-l="${l}" aria-selected="${l === listFilter}">${c !== null ? `<span class="chip" style="--c:var(--l${c})"><span class="dot"></span>${esc(label)}</span>` : esc(label)} <small>${n.toLocaleString('en-US')}</small></button>`).join('');
+  $('count').textContent = plural(matches.length, 'result') + (base.mode === 'sub' ? ', matched inside words' : '');
   moreRows();
   $('foot').textContent = 'Prices are per selling unit as published. Check the pack before comparing across lists.'
-    + (LISTS.some(l => l.cur === 'RWF') ? ` Lists published in RWF show USD converted at ${FX.toLocaleString('en-US')}.` : '');
+    + (LISTS.some(l => l.cur === 'RWF') ? ` Lists published in RWF show USD converted at ${rateText()}.` : '');
 }
 
-/* did-you-mean: edit distance against the words in product names */
-let VOCAB = null;
-function suggest(word){
-  if (word.length < 4) return [];
-  if (!VOCAB){ const m = new Map(); for (let i = 0; i < N; i++) for (const w of NAME[i].trim().split(' ')) if (w.length > 3 && /^[a-z]+$/.test(w)) m.set(w, (m.get(w) || 0) + 1); VOCAB = [...m.entries()]; }
-  const maxd = word.length > 6 ? 2 : 1, out = [];
-  for (const [w, n] of VOCAB){
-    if (Math.abs(w.length - word.length) > maxd || w[0] !== word[0]) continue;
-    const d = lev(word, w, maxd);
-    if (d <= maxd) out.push([d, -n, w]);
-  }
-  return out.sort((a, b) => a[0] - b[0] || a[1] - b[1]).slice(0, 4).map(x => x[2]);
-}
-function lev(a, b, max){
-  let prev = Array.from({length: b.length + 1}, (_, j) => j);
-  for (let i = 1; i <= a.length; i++){
-    const cur = [i]; let best = i;
-    for (let j = 1; j <= b.length; j++){ cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); best = Math.min(best, cur[j]); }
-    if (best > max) return max + 1;
-    prev = cur;
-  }
-  return prev[b.length];
-}
-
-/* ───────────────────────── compare ───────────────────────── */
+/* ───────────────────────── shortlist ───────────────────────── */
 const rowKey = i => C.l[i] + '|' + C.p[i] + '|' + pack(i);
 function saveTray(){ store.set('rms-tray', JSON.stringify(tray.map(rowKey))); }
 function loadTray(){
@@ -385,38 +965,31 @@ function loadTray(){
   for (let i = 0; i < N && found.size < want.size; i++){ const k = rowKey(i); if (want.has(k)) found.set(k, i); }
   tray = keys.map(k => found.get(k)).filter(i => i !== undefined);
 }
-function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1800); }
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1900); }
 function toggle(i){
   const at = tray.indexOf(i);
   if (at >= 0) tray.splice(at, 1);
-  else if (tray.length >= MAX_TRAY) return toast(`Compare holds ${MAX_TRAY} items. Remove one first.`);
-  else { tray.push(i); toast('Added to compare'); }
+  else if (tray.length >= MAX_TRAY) return toast(`Shortlist holds ${MAX_TRAY} items. Remove one first.`);
+  else { tray.push(i); toast('Added to shortlist'); }
   saveTray(); syncTray();
 }
 function syncTray(){
   const n = $('cmpN'); n.textContent = tray.length; n.dataset.n = tray.length;
   document.querySelectorAll('.add').forEach(b => {
     const on = tray.includes(+b.dataset.add);
-    b.setAttribute('aria-pressed', on);
-    b.setAttribute('aria-label', on ? 'Remove from compare' : 'Add to compare');
-    b.innerHTML = on ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
-                     : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Remove from shortlist' : 'Add to shortlist'); b.innerHTML = on ? SVG_CHECK : SVG_PLUS;
   });
-  renderCompare();
+  renderShortlist();
 }
-function renderCompare(){
+function renderShortlist(){
   const body = $('cmpBody'), foot = $('cmpFoot');
   foot.style.display = tray.length ? 'flex' : 'none';
-  if (!tray.length){
-    body.innerHTML = '<div class="empty"><b>Nothing to compare yet</b>Press + on a result to add it here, or use “Add lowest from each list” after a search.</div>';
-    return;
-  }
+  if (!tray.length){ body.innerHTML = '<div class="empty"><b>Your shortlist is empty</b>Press + on any price to keep it here and rank your picks.</div>'; return; }
   const items = [...tray].sort((a, b) => price(a) - price(b));
   const lo = price(items[0]), hi = price(items[items.length - 1]);
-  let sum = '';
-  if (items.length > 1){
-    sum = `<p class="sum"><b>${esc(C.p[items[0]])}</b> from ${esc(listOf(items[0]).label)} is lowest at <b>${money(lo, cur)}</b>. The highest costs <b>${(hi / lo).toFixed(1)}×</b> as much (${money(hi, cur)}).</p>`;
-  } else sum = '<p class="sum">Add one more product to see how they compare.</p>';
+  const sum = items.length > 1
+    ? `<p class="dsum"><b>${esc(C.p[items[0]])}</b> from ${esc(listOf(items[0]).label)} is lowest at <b>${money(lo, cur)}</b>. The highest costs <b>${(hi / lo).toFixed(1)}×</b> as much (${money(hi, cur)}).</p>`
+    : '<p class="dsum">Add one more product to see how they compare.</p>';
   body.innerHTML = sum + items.map(i => {
     const L = listOf(i), p = price(i), isLow = items.length > 1 && p === lo, r = p / lo;
     const d = items.length === 1 ? '' : isLow ? 'Lowest' : r >= 10 ? r.toFixed(1) + '× lowest' : '+' + Math.round((r - 1) * 100) + '%';
@@ -424,14 +997,13 @@ function renderCompare(){
     return `<div class="rung ${isLow ? 'low' : ''}" style="--c:var(--l${L.color})">
 <div><div class="name">${esc(C.p[i])}</div><div class="sub"><span class="chip"><span class="dot"></span>${esc(L.label)}</span>${meta ? `<span>${meta}</span>` : ''}</div></div>
 <div class="price">${money(p, cur)}<small>${money(price(i, other()), other())}</small></div>
-<button class="rm" data-rm="${i}" aria-label="Remove">${'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'}</button>
+<button class="rm" data-rm="${i}" aria-label="Remove"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 <div class="bar"><i style="width:${Math.max(p / hi * 100, 2).toFixed(1)}%"></i></div><div class="d">${d}</div></div>`;
   }).join('') + '<p class="caveat">Strength, form and pack size can differ between rows. Compare like with like before relying on the gap.</p>';
 }
-function openCompare(open){
-  document.body.classList.toggle('cmp', open);
-  $('drawer').setAttribute('aria-hidden', !open);
-  if (open) renderCompare();
+function openShortlist(open){
+  document.body.classList.toggle('cmp', open); $('drawer').setAttribute('aria-hidden', String(!open));
+  if (open) renderShortlist();
 }
 function addLowestEach(){
   if (!base) return;
@@ -439,22 +1011,26 @@ function addLowestEach(){
   for (const i of base.idx){ const l = C.l[i]; if (!best.has(l) || (C.u[i] ?? Infinity) < (C.u[best.get(l)] ?? Infinity)) best.set(l, i); }
   let added = 0;
   for (const i of best.values()){ if (!tray.includes(i) && tray.length < MAX_TRAY){ tray.push(i); added++; } }
-  saveTray(); syncTray();
-  toast(added ? `Added ${added} to compare` : 'Already in compare');
-  if (added) openCompare(true);
+  saveTray(); syncTray(); toast(added ? `Added ${added} to shortlist` : 'Already in shortlist');
+  if (added) openShortlist(true);
 }
 
 /* ───────────────────────── export ───────────────────────── */
+const csvq = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
 function csv(indices){
-  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const head = ['List', 'Product', 'Details', 'Pack', 'Category', 'Note', 'USD', 'RWF'];
-  return '\ufeff' + [head.join(',')].concat(indices.map(i => [listOf(i).label, C.p[i], detail(i), pack(i), cat(i), note(i), C.u[i], C.r[i]].map(q).join(','))).join('\r\n');
+  return '\ufeff' + [['List', 'Product', 'Details', 'Pack', 'Category', 'Note', 'USD', 'RWF'].join(',')]
+    .concat(indices.map(i => [listOf(i).label, C.p[i], detail(i), pack(i), cat(i), note(i), C.u[i], C.r[i]].map(csvq).join(','))).join('\r\n');
+}
+function matrixCsv(){
+  const gs = visibleGroups();
+  const cols = colLists.length ? colLists : [...new Set(gs.flatMap(g => [...g.byList.keys()]))].sort((a, b) => a - b);
+  const head = ['Product'].concat(cols.map(l => `${LISTS[l].label} (${cur})`), ['Lists with a price']);
+  return '\ufeff' + [head.map(csvq).join(',')].concat(gs.map(g => [g.label].concat(cols.map(l => { const a = g.byList.get(l); return a ? price(listMin(a)) : ''; }), [g.byList.size]).map(csvq).join(','))).join('\r\n');
 }
 function download(name, text){
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], {type: 'text/csv;charset=utf-8'}));
-  a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  a.href = URL.createObjectURL(new Blob([text], {type: 'text/csv;charset=utf-8'})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
 /* ───────────────────────── theme + currency ───────────────────────── */
@@ -463,40 +1039,237 @@ const ICON_SUN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" st
 function applyTheme(){
   document.documentElement.dataset.theme = theme;
   $('theme').innerHTML = theme === 'dark' ? ICON_SUN : ICON_MOON;
-  try{ window.parent.document.documentElement.setAttribute('data-rms-theme', theme); }catch(e){}   // lets the Streamlit button match
+  try{ window.parent.document.documentElement.setAttribute('data-rms-theme', theme); }catch(e){}
 }
-function applyCur(){
-  document.querySelectorAll('#cur button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === cur));
-}
+function applyCur(){ document.querySelectorAll('#cur button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === cur))); }
 
 /* ───────────────────────── wiring ───────────────────────── */
-const q = $('q');
-let timer;
-q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { query = q.value; listFilter = -1; rebuild(); }, 70); });
-$('clear').onclick = () => { q.value = ''; query = ''; listFilter = -1; rebuild(); q.focus(); };
+$('clear').onclick = () => { qEl.value = ''; query = ''; listFilter = -1; setGhost([], ''); rebuild(); qEl.focus(); };
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b){ listFilter = +b.dataset.l; applyFilter(); } });
-$('sort').onchange = e => { sortBy = e.target.value; applyFilter(); };
-$('lowest').onclick = addLowestEach;
-$('export').onclick = () => matches.length && download('rms_prices.csv', csv(matches));
-$('cmpExport').onclick = () => tray.length && download('rms_compare.csv', csv([...tray].sort((a, b) => price(a) - price(b))));
+$('viewSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.dataset.v === view) return; view = b.dataset.v; store.set('rms-view', view); window.scrollTo(0, 0); render(); });
+$('tools').addEventListener('click', e => {
+  if (e.target.closest('#lowest')) addLowestEach();
+  else if (e.target.closest('#export')){
+    if (view === 'compare') visibleGroups().length && download('rms_compare_lists.csv', matrixCsv());
+    else matches.length && download('rms_prices.csv', csv(matches));
+  }
+});
+$('tools').addEventListener('change', e => {
+  if (e.target.id === 'sort'){ sortBy = e.target.value; applyFilter(); }
+  else if (e.target.id === 'only'){ onlyShared = e.target.checked; gShown = 0; render(); }
+});
+$('cmpExport').onclick = () => tray.length && download('rms_shortlist.csv', csv([...tray].sort((a, b) => price(a) - price(b))));
 $('cmpClear').onclick = () => { tray = []; saveTray(); syncTray(); };
-$('openCmp').onclick = () => openCompare(true);
-$('closeCmp').onclick = () => openCompare(false);
-$('scrim').onclick = () => openCompare(false);
+$('openCmp').onclick = () => openShortlist(true);
+$('closeCmp').onclick = () => openShortlist(false);
+$('scrim').onclick = () => openShortlist(false);
 $('theme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; store.set('rms-theme', theme); applyTheme(); };
-$('cur').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = b.dataset.v; store.set('rms-cur', cur); applyCur(); applyFilter(); syncTray(); });
-rowsEl.addEventListener('click', e => {
-  const a = e.target.closest('[data-add]'); if (a) return toggle(+a.dataset.add);
-  const s = e.target.closest('[data-q]'); if (s){ q.value = s.dataset.q; query = s.dataset.q; rebuild(); }
+$('cur').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  cur = b.dataset.v; store.set('rms-cur', cur); applyCur(); applyFilter(); syncTray();
 });
+function resultClicks(e){
+  const a = e.target.closest('[data-add]'); if (a){ e.stopPropagation(); toggle(+a.dataset.add); return; }
+  const s = e.target.closest('[data-q]'); if (s){ commit(s.dataset.q); return; }
+  const r = e.target.closest('.mr'); if (r && matrixEl.contains(r)) toggleGroup(r.parentElement);
+}
+rowsEl.addEventListener('click', resultClicks);
+matrixEl.addEventListener('click', resultClicks);
+matrixEl.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('mr')){ e.preventDefault(); toggleGroup(e.target.parentElement); } });
 $('cmpBody').addEventListener('click', e => { const r = e.target.closest('[data-rm]'); if (r) toggle(+r.dataset.rm); });
+$('chips').addEventListener('click', e => { const b = e.target.closest('[data-chip]'); if (b){ commit(b.dataset.chip); } });
 document.addEventListener('keydown', e => {
-  if (e.key === '/' && document.activeElement !== q && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){ e.preventDefault(); q.focus(); }
-  if (e.key === 'Escape'){ if (document.body.classList.contains('cmp')) openCompare(false); else if (q.value){ $('clear').click(); } }
+  if (document.body.classList.contains('tour-open')) return;
+  if (e.key === '/' && document.activeElement !== qEl && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){ e.preventDefault(); qEl.focus(); }
+  if (e.key === 'Escape'){ if (document.body.classList.contains('cmp')) openShortlist(false); else if (qEl.value && sugg.hidden){ $('clear').click(); } }
 });
-new IntersectionObserver(es => { if (es[0].isIntersecting) moreRows(); }, {rootMargin: '800px'}).observe($('sentinel'));
+new IntersectionObserver(es => { if (es[0].isIntersecting){ if (view === 'compare') moreGroups(); else moreRows(); } }, {rootMargin: '800px'}).observe($('sentinel'));
 
-/* ───────────────────────── Manage (opens Streamlit's native dialog) ───────────────────────── */
+/* ───────────────────────── Tour (animated how-it-works) ───────────────────────── */
+const Tour = (() => {
+/* ───────── what the miniature app shows (real names and prices from the database) ───────── */
+const LIST = {rms24:['RMS Master Jul 2024',1], sa:['South Africa 2022',3], unicef:['UNICEF Africa',5], rhia:['RHIA Jun 2026',0], rms25:['RMS 2025',2], sl:['Sri Lanka 2024',4]};
+const STEPS = [
+  {t:'Search a product', p:'Start typing a name, strength or brand. Each suggestion shows how many prices it has. Press Tab to accept the faint completion.'},
+  {t:'Compare lists', p:'Switch to Compare lists to see the same product in every price list side by side. The lowest price is green. A warning marks gaps that probably come from a different pack size. Click a row to see every option.'},
+  {t:'Keep a shortlist', p:'Press + on any price to save it. Open your Shortlist to rank your picks from cheapest to dearest.'}
+];
+const R1 = [
+  {n:'PARACETAMOL 100 MG TABLET', l:'rms24', meta:'pack 1', p:'$0.0020', a:'RWF 3.00', low:1},
+  {n:'Paracetamol 120 mg', l:'sa', meta:'SYR   pack 2500', p:'$0.0020', a:'RWF 3.00', low:1},
+  {n:'Paracetamol 100 mg TAB-CAP (PO)', l:'unicef', meta:'', p:'$0.0020', a:'RWF 3.00', low:1},
+  {n:'PARACETAMOL 100mg tablet', l:'rhia', meta:'pack TABLET', p:'$0.0031', a:'RWF 4.00'}
+];
+const R3 = [
+  {n:'Paracetamol 500 mg', l:'sa', meta:'TAB   pack 100', p:'$0.0040', a:'RWF 6.00', v:0.0040, low:1},
+  {n:'Paracetamol 500 mg TAB-CAP (PO)', l:'unicef', meta:'', p:'$0.0044', a:'RWF 6.00', v:0.0044},
+  {n:'PARACETAMOL 500mg tablet', l:'rhia', meta:'pack TABLET', p:'$0.0077', a:'RWF 10.0', v:0.00769},
+  {n:'Paracetamol Tablet 500mg', l:'sl', meta:'', p:'$0.0100', a:'RWF 13.0', v:0.0100}
+];
+const COLS = ['RHIA','RMS Master','RMS 2025','S. Africa','Sri Lanka','UNICEF'], COLK = ['rhia','rms24','rms25','sa','sl','unicef'];
+const MX = [
+  {n:'Paracetamol 500 mg', f:'tablet or capsule', s:'28 options in 5 lists', c:[['$0.0077','+92%'],null,['$7.50','w1875'],['$0.0040','best'],['$0.0100','+150%'],['$0.0044','+10%']]},
+  {n:'Paracetamol 125 mg', f:'suppository', s:'5 options in 5 lists', c:[['$0.144','+267%'],['$0.0392','best'],['$2.25','w57'],['$0.360','+818%'],['$0.102','+159%'],null]},
+  {n:'Paracetamol 100 mg', f:'tablet or capsule', s:'3 options in 3 lists', c:[['$0.0031','+54%'],['$0.0020','best'],null,null,null,['$0.0020','best']]}
+];
+
+/* ───────── drawing helpers ───────── */
+const root = document.getElementById('tour');
+const $ = s => root.querySelector(s), screen = $('#t-screen'), stage = $('#t-stage');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const dot = k => `style="--c:var(--l${LIST[k][1]})"`;
+const rowHTML = (r, extra='') => `<div class="m-row" ${extra}><div><div class="nm">${r.n}</div><div class="sb"><em ${dot(r.l)}>${LIST[r.l][0]}</em>${r.meta?`<span>${r.meta}</span>`:''}</div></div><div class="pr ${r.low?'low':''}">${r.low?'<span class="pill">Lowest</span>':''}${r.p}<small>${r.a}</small></div><div class="m-add">+</div></div>`;
+
+function mock(){
+  screen.innerHTML = `
+  <div class="m-top"><span class="m-brand"><span class="logo" style="height:19px"></span></span><span class="m-seg"><b class="on">USD</b><b>RWF</b></span><span class="m-icon"></span><span class="m-btn" id="mShort">Shortlist <em id="mCount">0</em></span></div>
+  <div class="m-main">
+    <div class="m-h1" id="mH1">RMS Price Database</div>
+    <div class="m-search" id="mSearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+      <span class="m-field" id="mField"><span class="ph" id="mPh">Start typing a medicine or supply, e.g. amoxicillin</span><span id="mTyped"></span><span class="m-caret"></span><span class="gh" id="mGh"></span></span><span class="m-tab" id="mTab">Tab</span></div>
+    <div class="m-sugg" id="mSugg"></div>
+    <div class="m-chips" id="mChips">Popular searches <i>Paracetamol</i><i>Amoxicillin 500mg</i><i>Insulin</i><i>Oxytocin</i></div>
+    <div class="m-view" id="mView"><div class="m-seg2"><b class="on" id="mvR">Results</b><b id="mvC">Compare lists</b></div><span class="m-sum" id="mSum"></span></div>
+    <div class="m-results" id="mRes"></div><div class="m-matrix" id="mMx"></div>
+  </div>
+  <div class="tip" id="tip"></div>
+  <div class="m-scrim" id="mScrim"></div>
+  <div class="m-drawer" id="mDrawer"><h4>Shortlist</h4><div id="mDrS" class="s"></div><div id="mDrL"></div></div>
+  <div class="m-toast" id="mToast"></div>
+  <div class="cursor" id="cursor"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L9.6 19z" fill="#fff" stroke="#151514" stroke-width="1.6" stroke-linejoin="round"/></svg></div>`;
+}
+function fit(){ const s = stage.clientWidth / 700; screen.style.setProperty('--s', s); }
+new ResizeObserver(fit).observe(stage);
+
+function pos(el){ const r = el.getBoundingClientRect(), sr = screen.getBoundingClientRect(), s = sr.width / 700; return [(r.left - sr.left + r.width*.5)/s, (r.top - sr.top + r.height*.5)/s]; }
+async function move(el, T, dx=0, dy=0){ const c = $('#cursor'), [x,y] = pos(el); c.classList.add('on'); c.style.left = (x+dx-4)+'px'; c.style.top = (y+dy-3)+'px'; await T(reduce?0:900); }
+async function click(el, T){
+  await move(el, T); await T(120);
+  const [x,y] = pos(el), rp = document.createElement('i'); rp.className='ripple'; rp.style.left=x+'px'; rp.style.top=y+'px'; screen.appendChild(rp); setTimeout(()=>rp.remove(), 700);
+  el.classList.add('press'); await T(150); el.classList.remove('press'); await T(120);
+}
+const toast = msg => { const t = $('#mToast'); t.textContent = msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 1500); };
+async function reveal(sel, T, gap=140){ for (const el of screen.querySelectorAll(sel)){ el.classList.add('in'); await T(gap); } }
+function active(){ $('#mH1').style.cssText = 'height:0;margin:0;opacity:0;overflow:hidden'; $('#mChips').style.cssText = 'height:0;margin:0;opacity:0;overflow:hidden'; $('#mView').classList.add('on'); }
+
+/* ───────── the three scenes: each is a script of cursor moves, clicks and typing ───────── */
+const SUG = [['Paracetamol','395 results'],['Paracetamol 500 mg','91 results'],['Paracetamol 450 mg','55 results'],['Paracetamol 120 mg','38 results']];
+async function scene1(T){
+  const box = $('#mSearch'), typed = $('#mTyped'), gh = $('#mGh'), ph = $('#mPh'), tab = $('#mTab'), sg = $('#mSugg');
+  await T(500); await click(box, T); box.classList.add('focus'); ph.style.display = 'none';
+  let q = '';
+  for (const ch of 'para'){
+    q += ch; typed.textContent = q; await T(210);
+    if (q.length >= 2){
+      gh.textContent = 'cetamol'.slice(Math.max(0, q.length - 4)); gh.textContent = 'paracetamol'.slice(q.length);
+      tab.classList.add('on');
+      sg.innerHTML = '<div class="lab">Suggestions</div>' + SUG.map(s => `<div class="m-opt"><div><b>${s[0].slice(0,q.length)}</b>${s[0].slice(q.length)}</div><span>${s[1]}</span></div>`).join('');
+      sg.classList.add('on');
+    }
+  }
+  await T(1100);
+  await move(tab, T, 0, 0); tab.classList.add('hit'); await T(380);
+  typed.textContent = 'paracetamol'; gh.textContent = ''; tab.classList.remove('on','hit'); sg.classList.remove('on'); box.classList.remove('focus'); await T(260);
+  active(); $('#mSum').textContent = '395 results'; $('#mRes').innerHTML = R1.map(r => rowHTML(r)).join('');
+  await reveal('.m-row', T, 170);
+  await T(500); const p = screen.querySelector('.pr.low'); p.classList.add('pulse'); await T(2000);
+}
+async function scene2(T){
+  active(); $('#mTyped').textContent = 'paracetamol'; $('#mPh').style.display = 'none'; $('#mSum').textContent = '395 results';
+  $('#mRes').innerHTML = R1.map(r => rowHTML(r)).join(''); screen.querySelectorAll('.m-row').forEach(r => r.classList.add('in'));
+  await T(700); await click($('#mvC'), T);
+  $('#mvR').classList.remove('on'); $('#mvC').classList.add('on'); $('#mRes').innerHTML = ''; $('#mSum').textContent = '181 products across 6 lists, 7 in 2+ lists';
+  $('#mMx').innerHTML = `<div class="mx-h"><div>Product</div>${COLS.map((c,i)=>`<div><span class="hc" style="--c:var(--l${LIST[COLK[i]][1]})"><i style="--c:var(--l${LIST[COLK[i]][1]})"></i>${c}</span></div>`).join('')}</div>` +
+    MX.map((m,mi) => `<div class="mx-row" data-mi="${mi}"><div class="mx-r"><div class="pn">${m.n} <small>${m.f}, ${m.s}</small></div>${m.c.map(c => !c ? '<div class="mx-c none">&ndash;</div>' : c[1]==='best' ? `<div class="mx-c best"><b>${c[0]}</b></div>` : c[1][0]==='w' ? `<div class="mx-c"><b>${c[0]}</b><small><span class="w warn">&times;${c[1].slice(1)} &#9888;</span></small></div>` : `<div class="mx-c"><b>${c[0]}</b><small>${c[1]}</small></div>`).join('')}</div>
+      <div class="mx-detail"></div></div>`).join('');
+  await T(250); screen.querySelector('.mx-h').classList.add('in'); await reveal('.mx-row', T, 260);
+  await T(500); screen.querySelectorAll('.mx-c.best b').forEach(b => b.classList.add('pulse')); await T(1700);
+  const warn = screen.querySelector('.mx-c .warn'), tip = $('#tip'); await move(warn, T);
+  const [x,y] = pos(warn); tip.textContent = 'Probably a different pack size, not a real price gap. Open the row to check.'; tip.style.left = Math.min(x-150, 470)+'px'; tip.style.top = (y+16)+'px'; tip.classList.add('on'); await T(2400); tip.classList.remove('on');
+  const row = screen.querySelector('.mx-row'); await click(row.querySelector('.pn'), T);
+  const d = row.querySelector('.mx-detail');
+  d.innerHTML = `<div class="mx-d"><div>PARACETAMOL 500mg tablet<span><em ${dot('rhia')} style="--c:var(--l0)">RHIA Jun 2026</em>  pack TABLET</span></div><b>$0.0077</b></div>
+  <div class="mx-d"><div>Paracetamol &ndash; 500 mg &ndash; Tablet<span><em style="--c:var(--l2)">RMS 2025</em>  <strong style="color:var(--warn)">pack 100&times;10</strong></span></div><b>$7.50</b></div>
+  <div class="mx-d"><div>Paracetamol 500 mg<span><em style="--c:var(--l3)">South Africa 2022</em>  pack 100</span></div><b>$0.0040</b></div>`;
+  d.classList.add('open'); await T(3600);
+}
+async function scene3(T){
+  active(); $('#mTyped').textContent = 'paracetamol 500 mg'; $('#mPh').style.display = 'none'; $('#mSum').textContent = '91 results';
+  $('#mRes').innerHTML = R3.map(r => rowHTML(r)).join(''); screen.querySelectorAll('.m-row').forEach(r => r.classList.add('in'));
+  const adds = [...screen.querySelectorAll('.m-add')], cnt = $('#mCount'); let n = 0;
+  await T(700);
+  for (const i of [0,1,2]){
+    await click(adds[i], T); adds[i].classList.add('on'); adds[i].textContent = '\u2713'; n++; cnt.textContent = n; cnt.classList.add('on'); toast('Added to shortlist'); await T(650);
+  }
+  await click($('#mShort'), T);
+  const items = [R3[0], R3[1], R3[2]], lo = items[0].v;
+  $('#mScrim').classList.add('on'); $('#mDrawer').classList.add('on'); await T(450);
+  $('#mDrS').innerHTML = `<b>Paracetamol 500 mg</b> from South Africa 2022 is lowest at <b>$0.0040</b>. The highest costs <b>1.9&times;</b> as much ($0.0077).`;
+  $('#mDrL').innerHTML = items.map((r,i) => { const ratio = r.v/lo, d = i===0 ? 'Lowest' : '+' + Math.round((ratio-1)*100) + '%';
+    return `<div class="dr ${i===0?'low':''}" style="--c:var(--l${LIST[r.l][1]})"><div class="t">${r.n}<small>${LIST[r.l][0]}</small></div><div class="p">${r.p}</div><div class="bar"><i data-w="${Math.max(r.v/0.00769*100,3)}"></i></div><div class="d">${d}</div></div>`; }).join('');
+  for (const el of screen.querySelectorAll('.dr')){ el.classList.add('in'); el.querySelector('.bar i').style.width = el.querySelector('.bar i').dataset.w + '%'; await T(260); }
+  await T(3200);
+}
+const SCENES = [scene1, scene2, scene3];
+
+/* ───────── the tour: run a scene, loop it, move between steps ───────── */
+let token = 0, cur = 0;
+const CANCEL = Symbol('cancel');
+async function play(i){
+  const my = ++token, alive = () => my === token;
+  const T = ms => new Promise((res, rej) => setTimeout(() => alive() ? res() : rej(CANCEL), ms));
+  try{
+    do{
+      mock(); fit();
+      await SCENES[i](T);
+      if (reduce) return;
+      await T(900);
+    } while (true);
+  }catch(e){ if (e !== CANCEL) throw e; }
+}
+function show(i){
+  cur = Math.max(0, Math.min(STEPS.length - 1, i));
+  root.querySelectorAll('.step').forEach((b, k) => { b.setAttribute('aria-current', k === cur ? 'step' : 'false'); b.classList.toggle('done', k < cur); });
+  root.querySelectorAll('.dots button').forEach((b, k) => b.setAttribute('aria-current', k === cur ? 'step' : 'false'));
+  $('#capN').textContent = `Step ${cur + 1} of ${STEPS.length}`; $('#capT').textContent = STEPS[cur].t; $('#capP').textContent = STEPS[cur].p;
+  $('#back').disabled = cur === 0; $('#next').textContent = cur === STEPS.length - 1 ? 'Start searching' : 'Next';
+  play(cur);
+}
+$('#next').onclick = () => { if (cur === STEPS.length - 1) done(); else show(cur + 1); };
+$('#back').onclick = () => show(cur - 1);
+$('#skip').onclick = done;
+function done(){ close(); }
+root.querySelectorAll('.step,.dots button').forEach(b => b.onclick = () => show(+b.dataset.i));
+show(0);
+let lastFocus = null;
+function open(i = 0){
+  if (!root.hidden) return;
+  lastFocus = document.activeElement; root.hidden = false; document.body.classList.add('tour-open'); fit(); show(i); $('#next').focus({focusVisible: false});
+}
+function close(){
+  token++; root.hidden = true; document.body.classList.remove('tour-open'); store.set('rms-tour', '1');
+  autoFocused = true; qEl.focus({preventScroll: true}); setTimeout(() => { autoFocused = false; }, 300);
+}
+root.addEventListener('mousedown', e => { if (e.target === root) close(); });
+$('#t-close').onclick = close;
+document.addEventListener('keydown', e => {
+  if (root.hidden) return;
+  if (e.key === 'Escape'){ e.preventDefault(); close(); }
+  else if (e.key === 'ArrowRight'){ $('#next').click(); }
+  else if (e.key === 'ArrowLeft' && !$('#back').disabled){ $('#back').click(); }
+  else if (e.key === 'Tab'){
+    const f = [...root.querySelectorAll('button:not([disabled])')]; if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+});
+return {open, close};
+})();
+$('tourBtn').onclick = () => Tour.open(0);
+document.querySelector('.steps').addEventListener('click', e => { const b = e.target.closest('[data-tour]'); if (b) Tour.open(+b.dataset.tour); });
+
+/* ───────────────────────── Admin (opens Streamlit's native dialog from the footer) ───────────────────────── */
 function nativeAdmin(){
   try{
     const d = window.parent.document;
@@ -508,7 +1281,6 @@ function openAdmin(){
   const b = nativeAdmin();
   if (b) b.click(); else toast('The admin panel is not available here. Add ?admin=1 to the address and scroll to the bottom.');
 }
-$('adminLink').onclick = openAdmin;
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a'){ e.preventDefault(); openAdmin(); } });
 (function hideNative(tries){            // keep Streamlit's own button out of sight (unless the address has ?admin=1)
   let showIt = false; try{ showIt = /[?&]admin=/.test(window.parent.location.search); }catch(e){}
@@ -516,18 +1288,27 @@ document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.sh
   if (b){ if (!showIt){ const box = b.closest('[data-testid="stElementContainer"]') || b.closest('.element-container') || b.parentElement; box.style.display = 'none'; } }
   else if (tries > 0) setTimeout(() => hideNative(tries - 1), 400);
 })(15);
+$('adminLink').onclick = openAdmin;
 
 /* ───────────────────────── start ───────────────────────── */
 (function init(){
   const total = LISTS.reduce((s, l) => s + l.n, 0);
-  $('hint').innerHTML = 'Try' + ['paracetamol', 'amoxicillin 500mg', 'insulin', 'surgical gloves'].map(t => `<button data-hint="${t}">${t}</button>`).join('');
-  $('hint').addEventListener('click', e => { const b = e.target.closest('[data-hint]'); if (b){ q.value = b.dataset.hint; query = q.value; rebuild(); q.focus(); } });
-  $('legend').innerHTML = LISTS.map(l => `<span style="--c:var(--l${l.color})" title="${l.n.toLocaleString('en-US')} prices"><i class="dot"></i>${esc(l.label)} <small>${l.n.toLocaleString('en-US')}</small></span>`).join('')
-    + `<span style="flex-basis:100%;margin-top:4px;color:var(--faint)">${total.toLocaleString('en-US')} prices. 1 USD = ${FX.toLocaleString('en-US')} RWF.</span>`;
-  if (!N){ $('hint').textContent = 'No price lists yet. An admin can add one from the footer.'; q.disabled = true; }
+  popular = CHIPS.filter(t => countSearch(t) > 0);
+  $('chips').innerHTML = '<span>Popular searches</span>' + popular.slice(0, 8).map(t => `<button class="chip2" data-chip="${esc(cap(t))}">${esc(cap(t))}</button>`).join('');
+  $('legend').innerHTML = '<b>Price lists searched</b>' + LISTS.map(l => `<span class="chip" style="--c:var(--l${l.color})" title="${l.n.toLocaleString('en-US')} prices"><i class="dot"></i>${esc(l.label)} <small>${l.n.toLocaleString('en-US')}</small></span>`).join('')
+    + `<span class="tot">${total.toLocaleString('en-US')} prices in total.</span>`;
+  $('hint').textContent = '';
+  if (!N){ $('hint').textContent = 'No price lists yet. An admin can add one from the footer.'; qEl.disabled = true; }
+  try{ const pd = window.parent.document; pd.title = 'RMS Price Database';
+    pd.querySelectorAll('link[rel*="icon"]').forEach(l => l.remove());
+    const ic = pd.createElement('link'); ic.rel = 'icon'; ic.type = 'image/png'; ic.href = 'data:image/png;base64,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'; pd.head.appendChild(ic); }catch(e){}
+  if (window.innerWidth < 480) qEl.placeholder = 'Search a medicine or supply';
+  { const r = $('rate'); r.textContent = '1 USD = ' + rateText() + ' RWF' + (FXI.state === 'saved' ? ' (last saved)' : FXI.state === 'fixed' ? ' (fixed rate)' : ''); r.title = FXI.text || ''; }
   loadTray(); applyTheme(); applyCur(); syncTray(); render();
-  q.focus({preventScroll: true});
+  autoFocused = true; qEl.focus({preventScroll: true}); setTimeout(() => { autoFocused = false; }, 400);
+  if (N && store.get('rms-tour', '') !== '1') setTimeout(() => Tour.open(0), 1100);      // shown once, on the first visit
 })();
+
 </script>
 </body>
 </html>

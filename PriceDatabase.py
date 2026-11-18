@@ -3,12 +3,13 @@ RMS Price Database
 ==================
 The whole interface is a single HTML page (index.html) injected into Streamlit, the same pattern as the
 Sales dashboard. It searches, compares and switches theme locally in the browser, so it never waits on a
-Streamlit rerun. Streamlit only does the parts a browser page cannot: the database and the hidden
+Streamlit rerun. Predictive typing, the Compare lists table and the animated how-it-works tour are part of that page. Streamlit only does the parts a browser page cannot: the database and the hidden
 admin panel (a quiet link in the page footer) where an admin uploads lists or a whole database file.
 
 Run:  streamlit run PriceDatabase.py
 """
 import hmac
+import json
 import os
 import time
 from pathlib import Path
@@ -18,6 +19,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 import database
+import fx
 import importer
 
 st.set_page_config(page_title="RMS Price Database", page_icon="💊", layout="wide",
@@ -55,10 +57,21 @@ button[role="tab"][aria-selected="true"], button[role="tab"][aria-selected="true
 
 
 # ───────────────────────────────────────────────────────────── data
-@st.cache_data(show_spinner=False, max_entries=2)
-def build_page(version: str, ui_mtime: float) -> str:
-    """The HTML page with the database baked in. Rebuilt only when the data or the page file changes."""
-    return UI_FILE.read_text(encoding="utf-8").replace("__DATA__", database.build_payload())
+@st.cache_data(ttl=3600, show_spinner=False)
+def current_rate() -> dict:
+    """USD to RWF: looked up online at most once an hour, saved, and never allowed to break the page."""
+    try:
+        return fx.resolve(database.Store)
+    except Exception as exc:
+        return {"rate": fx.DEFAULT_RATE, "source": "", "asof": "", "live": False, "state": "fixed", "note": str(exc)}
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def build_page(version: str, ui_mtime: float, rate_json: str) -> str:
+    """The HTML page with the database baked in. Rebuilt only when the data, the page file or the rate changes."""
+    info = json.loads(rate_json)
+    info["text"] = fx.describe(info)
+    return UI_FILE.read_text(encoding="utf-8").replace("__DATA__", database.build_payload(info["rate"], info))
 
 
 if not UI_FILE.exists():
@@ -72,6 +85,8 @@ except Exception as exc:                          # never leave the page spinnin
     st.error(f"The price database could not be opened: {exc}")
     st.stop()
 
+
+rate_info = current_rate()
 
 # ───────────────────────────────────────────────────────────── admin
 MAX_TRIES = 5
@@ -154,6 +169,8 @@ def admin_dialog():
             if int(lists["unpriced"].sum() + lists["duplicates"].sum()):
                 st.caption(f"{int(lists['unpriced'].sum()):,} rows without a price and "
                            f"{int(lists['duplicates'].sum()):,} exact duplicates were left out when importing.")
+            st.caption(f"Exchange rate in use: 1 USD = {rate_info['rate']:,.2f} RWF. {fx.describe(rate_info)}"
+                       + (f" Problem: {rate_info['note']}" if rate_info["state"] != "live" and rate_info.get("note") else ""))
             with st.expander("Remove a list"):
                 target = st.selectbox("List to remove", lists["label"].tolist(), label_visibility="collapsed")
                 if st.button(f"Remove {target}"):
@@ -232,7 +249,7 @@ def admin_dialog():
                        "pricedb.sqlite to keep your changes.")
         st.download_button("Download database (pricedb.sqlite)", data=database.db_bytes(), file_name="pricedb.sqlite",
                            mime="application/octet-stream")
-        st.download_button("Download all prices (CSV)", data=database.export_csv(), file_name="rms_all_prices.csv",
+        st.download_button("Download all prices (CSV)", data=database.export_csv(rate=rate_info["rate"]), file_name="rms_all_prices.csv",
                            mime="text/csv")
 
 
@@ -244,7 +261,7 @@ if database.list_datasets().empty:
                "repository, or add a list from the Admin link in the page footer.")
 
 try:
-    page_html = build_page(database.version(), UI_FILE.stat().st_mtime)
+    page_html = build_page(database.version(), UI_FILE.stat().st_mtime, json.dumps(rate_info, sort_keys=True))
 except Exception as exc:
     st.error(f"The page could not be built: {exc}")
     st.stop()
