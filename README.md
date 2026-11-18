@@ -95,6 +95,10 @@ second price column in the database; it is never shown.
 - **"The price database could not be opened":** the app folder may be read-only or on a synced drive (Google Drive,
   OneDrive). The app then tries a private copy in the system temp folder automatically. Keep the project in a normal
   local folder when running it on your computer.
+- **A yellow notice at the top says a file is missing or older (database.py, fx.py):** the files in GitHub are not all from the same
+  version. The app still works, but the live exchange rate stays off until the named file is uploaded. Upload it (or, easiest,
+  every top-level file from this folder together, letting them overwrite) and reload the page; the app picks up the new file
+  by itself. If the notice is still there after a minute, use Manage app > Reboot app.
 - **The Admin link does nothing:** open the app with `?admin=1` at the end of the address and scroll to the bottom; a plain Admin button appears there.
 - Tested on Streamlit 1.40 and 1.67, with pandas 2 and 3.
 
@@ -110,3 +114,9 @@ list and check that all seven files above are there. Streamlit Cloud redeploys o
 
 Because Streamlit Cloud resets its disk on restart, keep `pricedb.sqlite` in GitHub as your master copy, and replace it
 with the file from **Admin > Backup > Download database** after you add or change lists in the app.
+
+## Keeping the repository tidy
+The app uses only the files in this folder. Anything else sitting in the repository can be deleted, in particular leftovers
+from older versions: `data_loader.py`, `styles.py`, `ui/` (the old place of index.html), `__pycache__/`. Files that belong to a
+different project (for example `app.py`, `Procfile`, `pbc_*`) are not used by this app, but check they are not used by
+something else before deleting them.

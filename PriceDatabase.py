@@ -19,14 +19,19 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 import database
-import fx
 import importer
+
+try:
+    import fx
+except ImportError:                                  # fx.py was not uploaded
+    fx = None
 
 st.set_page_config(page_title="RMS Price Database", page_icon="💊", layout="wide",
                    initial_sidebar_state="collapsed")
 
 HERE = Path(__file__).parent
 # index.html sits next to this file (so no folder has to be uploaded); ui/index.html is also accepted.
+COMPAT_NOTES = []          # filled in below if a file on the server is older than the others
 UI_FILE = next((p for p in (HERE / "index.html", HERE / "ui" / "index.html") if p.exists()), HERE / "index.html")
 
 # Everything Streamlit draws around the page is removed, the HTML page fills the window, and the
@@ -56,22 +61,62 @@ button[role="tab"][aria-selected="true"], button[role="tab"][aria-selected="true
 """)
 
 
+# ───────────────────────────────────────────────────────────── files that must match
+# The files are uploaded by hand, so one can end up older than the others. Rather than crash with a technical error,
+# the app starts without the newer feature and says which file to upload.
+import importlib
+import inspect
+
+
+def _database_is_current() -> bool:
+    return "rate" in inspect.signature(database.build_payload).parameters and hasattr(database, "Store")
+
+
+if not _database_is_current():
+    # Streamlit keeps imported files in memory, so a database.py that was replaced while the app was running is not
+    # noticed until a reboot. Reload it here, so a fresh upload takes effect on the next page load.
+    try:
+        importlib.reload(importer)
+        importlib.reload(database)
+    except Exception:
+        pass
+DB_HAS_RATE = _database_is_current()
+if fx is None:
+    COMPAT_NOTES.append("fx.py is missing from your GitHub repository, so the live exchange rate is switched off (a fixed "
+                        "1 USD = 1,300 RWF is used). Upload fx.py next to PriceDatabase.py.")
+if not DB_HAS_RATE:
+    COMPAT_NOTES.append("database.py in your GitHub repository is an older version than PriceDatabase.py, so the live exchange "
+                        "rate is switched off (a fixed 1 USD = 1,300 RWF is used). Upload the newer database.py from the zip, "
+                        "then reboot the app.")
+RATE_OK = fx is not None and DB_HAS_RATE
+FIXED_RATE = {"rate": 1300.0, "source": "", "asof": "", "live": False, "state": "fixed", "note": ""}
+
+
+def describe_rate(info: dict) -> str:
+    return fx.describe(info) if fx is not None else "The live rate is switched off, so this is the fixed rate of 1,300."
+
+
 # ───────────────────────────────────────────────────────────── data
 @st.cache_data(ttl=3600, show_spinner=False)
-def current_rate() -> dict:
+def _lookup_rate() -> dict:
     """USD to RWF: looked up online at most once an hour, saved, and never allowed to break the page."""
     try:
         return fx.resolve(database.Store)
     except Exception as exc:
-        return {"rate": fx.DEFAULT_RATE, "source": "", "asof": "", "live": False, "state": "fixed", "note": str(exc)}
+        return {**FIXED_RATE, "note": str(exc)}
+
+
+def current_rate() -> dict:
+    return _lookup_rate() if RATE_OK else dict(FIXED_RATE)      # not cached while a file is missing or old
 
 
 @st.cache_data(show_spinner=False, max_entries=3)
 def build_page(version: str, ui_mtime: float, rate_json: str) -> str:
     """The HTML page with the database baked in. Rebuilt only when the data, the page file or the rate changes."""
     info = json.loads(rate_json)
-    info["text"] = fx.describe(info)
-    return UI_FILE.read_text(encoding="utf-8").replace("__DATA__", database.build_payload(info["rate"], info))
+    info["text"] = describe_rate(info)
+    payload = database.build_payload(info["rate"], info) if DB_HAS_RATE else database.build_payload()
+    return UI_FILE.read_text(encoding="utf-8").replace("__DATA__", payload)
 
 
 if not UI_FILE.exists():
@@ -169,7 +214,7 @@ def admin_dialog():
             if int(lists["unpriced"].sum() + lists["duplicates"].sum()):
                 st.caption(f"{int(lists['unpriced'].sum()):,} rows without a price and "
                            f"{int(lists['duplicates'].sum()):,} exact duplicates were left out when importing.")
-            st.caption(f"Exchange rate in use: 1 USD = {rate_info['rate']:,.2f} RWF. {fx.describe(rate_info)}"
+            st.caption(f"Exchange rate in use: 1 USD = {rate_info['rate']:,.2f} RWF. {describe_rate(rate_info)}"
                        + (f" Problem: {rate_info['note']}" if rate_info["state"] != "live" and rate_info.get("note") else ""))
             with st.expander("Remove a list"):
                 target = st.selectbox("List to remove", lists["label"].tolist(), label_visibility="collapsed")
@@ -249,11 +294,13 @@ def admin_dialog():
                        "pricedb.sqlite to keep your changes.")
         st.download_button("Download database (pricedb.sqlite)", data=database.db_bytes(), file_name="pricedb.sqlite",
                            mime="application/octet-stream")
-        st.download_button("Download all prices (CSV)", data=database.export_csv(rate=rate_info["rate"]), file_name="rms_all_prices.csv",
+        st.download_button("Download all prices (CSV)", data=(database.export_csv(rate=rate_info["rate"]) if DB_HAS_RATE else database.export_csv()), file_name="rms_all_prices.csv",
                            mime="text/csv")
 
 
 # ───────────────────────────────────────────────────────────── page
+for _note in COMPAT_NOTES:
+    st.warning(_note)
 if seed_note:
     st.warning(f"Some files in datasets/ could not be imported: {seed_note}")
 if database.list_datasets().empty:
