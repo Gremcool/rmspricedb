@@ -530,7 +530,7 @@ let cur = store.get('rms-cur', 'USD');
 let theme = store.get('rms-theme', 'light');
 let view = store.get('rms-view', 'results') === 'compare' ? 'compare' : 'results';
 let onlyShared = false;
-let query = '', listFilter = -1, sortBy = 'best', shown = 0, gShown = 0;
+let query = '', listFilter = -1, sortBy = 'asc', shown = 0, gShown = 0;
 let matches = [], LOW = Infinity, base = null;
 let groups = [], colLists = [];
 let tray = [];
@@ -594,8 +594,9 @@ function applyFilter(){
   let idx = base.idx.map((i, k) => [i, base.score[k]]);
   if (listFilter >= 0) idx = idx.filter(([i]) => C.l[i] === listFilter);
   const p = i => price(i) ?? Infinity;
-  if (sortBy === 'asc') idx.sort((a, b) => p(a[0]) - p(b[0]));
-  else if (sortBy === 'desc') idx.sort((a, b) => p(b[0]) - p(a[0]));
+  const cmp = (x, y) => x < y ? -1 : x > y ? 1 : 0;
+  if (sortBy === 'asc') idx.sort((a, b) => cmp(p(a[0]), p(b[0])) || b[1] - a[1]);          // cheapest first; equal prices: closer match first
+  else if (sortBy === 'desc') idx.sort((a, b) => cmp(p(b[0]), p(a[0])) || b[1] - a[1]);
   else if (sortBy === 'name') idx.sort((a, b) => NAME[a[0]] < NAME[b[0]] ? -1 : 1);
   else idx.sort((a, b) => b[1] - a[1] || p(a[0]) - p(b[0]));
   matches = idx.map(x => x[0]);
@@ -913,7 +914,7 @@ function toggleGroup(row){
 function toolsHTML(counts){
   if (view === 'compare') return `<label class="check"><input type="checkbox" id="only" ${onlyShared ? 'checked' : ''}>Only products in 2+ lists</label><button class="link" id="export" type="button">Export CSV</button>`;
   return `${counts.size > 1 ? '<button class="link" id="lowest" type="button">Add lowest from each list</button>' : ''}
-<select id="sort" aria-label="Sort results"><option value="best">Best match</option><option value="asc">Price, low to high</option><option value="desc">Price, high to low</option><option value="name">Name</option></select>
+<select id="sort" aria-label="Sort results"><option value="asc">Price, low to high</option><option value="best">Best match</option><option value="desc">Price, high to low</option><option value="name">Name</option></select>
 <button class="link" id="export" type="button">Export CSV</button>`;
 }
 function render(){

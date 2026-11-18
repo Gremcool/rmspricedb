@@ -8,7 +8,8 @@ hidden panel in the page footer.
 ## Using the page
 - **Search:** suggestions with result counts appear as you type, and a faint completion appears inside the box (press
   Tab to accept it). Click the empty box to see recent and popular searches.
-- **Results:** every matching price, one per line, with the lowest marked. Tabs filter by list.
+- **Results:** every matching price, one per line, cheapest first, with the lowest marked. Tabs filter by list. The sort menu
+  also offers Best match, Price high to low and Name.
 - **Compare lists:** the same search as a table. Each row is one product (grouped automatically by ingredient, strength
   and form) and each column is a price list, with the lowest price in green. Click a row to see every option behind it.
   "Only products in 2+ lists" hides products that only one list sells.
