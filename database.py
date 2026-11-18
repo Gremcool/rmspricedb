@@ -256,6 +256,72 @@ def delete_dataset(label: str) -> None:
         conn.close()
 
 
+# ───────────────────────────────────────────────────────────── uploading a whole database file
+REQUIRED_COLUMNS = {
+    "datasets": {"id", "label", "period", "kind", "native_currency", "source_file", "color_idx", "imported_at"},
+    "prices": {"id", "dataset_id", "product", "detail", "pack", "category", "subcat", "code", "note", "usd", "rwf"},
+}
+MAX_DB_BYTES = 300 * 1024 * 1024
+
+
+def inspect_database(data: bytes) -> dict:
+    """
+    Check an uploaded .sqlite file without touching the live database.
+    Returns {"lists": DataFrame(List, Period, Prices), "prices": int}. Raises ValueError with a plain message.
+    """
+    if len(data) > MAX_DB_BYTES:
+        raise ValueError("That file is too large to be a price database.")
+    if not data.startswith(b"SQLite format 3\x00"):
+        raise ValueError("That is not an SQLite database file. Use the pricedb.sqlite you downloaded from Backup.")
+    folder = Path(tempfile.mkdtemp())
+    tmp = folder / "upload.sqlite"
+    try:
+        tmp.write_bytes(data)
+        conn = sqlite3.connect(f"file:{tmp}?mode=ro", uri=True)
+        try:
+            if conn.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+                raise ValueError("The database file is damaged (it failed SQLite's integrity check).")
+            for table, needed in REQUIRED_COLUMNS.items():
+                cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+                if not cols:
+                    raise ValueError(f"This is an SQLite file, but it has no '{table}' table, so it does not look like "
+                                     "an RMS price database.")
+                if needed - cols:
+                    raise ValueError(f"The '{table}' table is missing columns: {', '.join(sorted(needed - cols))}.")
+            lists = pd.read_sql(
+                "SELECT d.label AS List, d.period AS Period, COUNT(p.id) AS Prices FROM datasets d "
+                "LEFT JOIN prices p ON p.dataset_id = d.id GROUP BY d.id ORDER BY d.id", conn)
+            n = int(conn.execute("SELECT COUNT(*) FROM prices").fetchone()[0])
+        finally:
+            conn.close()
+    except sqlite3.DatabaseError as exc:
+        raise ValueError(f"The file could not be read as a database: {exc}") from exc
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+    if lists.empty or n == 0:
+        raise ValueError("That database has no price lists in it.")
+    return {"lists": lists, "prices": n}
+
+
+def replace_database(data: bytes) -> dict:
+    """Swap the live database for an uploaded one (checked first). The old one is kept next to it as .previous."""
+    info = inspect_database(data)
+    staged = DB_PATH.with_suffix(".incoming")
+    staged.write_bytes(data)
+    try:
+        if DB_PATH.exists():
+            try:
+                shutil.copy(DB_PATH, DB_PATH.with_suffix(".previous"))
+            except OSError:
+                pass
+        os.replace(staged, DB_PATH)
+    finally:
+        if staged.exists():
+            staged.unlink()
+    init()                                              # adds any missing index or table, keeps the data
+    return info
+
+
 def seed_from_folder() -> str | None:
     """Fill an empty database from the Excel/CSV files in datasets/. Returns a note about anything skipped."""
     if not SEED_DIR.exists():
